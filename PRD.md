@@ -35,9 +35,10 @@ reward beats so it's not pure stress.
 ## 3. Current status (2026-06-18)
 
 Core loop, movement, scoring, save system, 8 hazard types, 4 powerups, coins, a
-7-event rotation, and a full **boss progression** (3 mini-bosses → a main boss → endless
-overdrive) are **built and compile-clean**. Biggest gap: **no upgrade store yet**
-(coins bank but can't be spent), and no audio/juice/real art. Balance is unverified by
+7-event rotation, a full **boss progression** (3 mini-bosses → a main boss → endless
+overdrive), **milestone-gated unlocks**, and a **celebration/juice layer** (speed burst +
+shake + flash + fireworks) are **built and compile-clean**. Biggest gap: **no upgrade store
+yet** (coins bank but can't be spent), and no audio/real art. Balance is unverified by
 real playtesting in places (noted per item).
 
 ---
@@ -72,6 +73,13 @@ real playtesting in places (noted per item).
         (big coin payout + run-long score-mult bump + free shield).
   - [x] **Endless overdrive** — after the main boss, regular events escalate past the cap
         and the boss rotation recurs (buffed). All per-run.
+- [x] **Milestone progression** — obstacles/events unlock by *earned progress* (`_progress`),
+      not a clock: +1 per event survived, +2 surge per boss beaten (which also bumps intensity
+      via `_surge()`). Run starts on basics, opens up as you clear challenges. Per-run.
+- [x] **Celebration / juice** — clearing an event (small) or beating a boss (big) fires a
+      burst: speed boost (camera) + screen shake + symmetric **fireworks** (`Fireworks.tscn`)
+      + an "EVENT CLEARED!" banner (boss adds a gold screen-flash). Coin Rush speeds the world
+      up + wavier path for real challenge; reward block always drops a Magnet.
 
 ### 🔜 To build (roughly in priority order)
 - [ ] **Upgrade Store** *(next — the big one)*. End-of-run shop to spend banked coins on
@@ -82,7 +90,8 @@ real playtesting in places (noted per item).
   - [ ] Starter upgrade set: e.g. *Start with a Shield*, *+base multiplier*,
         *longer powerups*, *bigger magnet*, *coin value +*
   - [ ] Balance upgrade costs vs coin income
-- [ ] **Juice/feel** — screen shake on crash, crash particle burst, jetpack trail
+- [ ] **More juice/feel** — *(celebration bursts + shake + fireworks done)*; still want crash
+      shake + crash particle burst + jetpack trail, and a **combo/streak** meter
 - [ ] **Audio** — jetpack whoosh, coin ding, crash boom, event stingers, music
 - [ ] **Real art** — replace placeholder rectangles (Moki sprite first)
 - [ ] **Disk-persist owned upgrades** (part of store, but call it out)

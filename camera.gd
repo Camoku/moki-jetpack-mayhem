@@ -13,9 +13,11 @@ extends Camera2D
 
 @export var scroll_speed: float = 280.0     # Normal world speed.
 @export var boost_multiplier: float = 1.8   # Default boost strength (normal rings).
+@export var shake_decay: float = 26.0       # How fast a screen shake fades (px/sec).
 
 var _boost_time: float = 0.0   # seconds of boost remaining
 var _boost_mult: float = 1.0   # strength of the active boost (1.0 = none)
+var _shake: float = 0.0        # current screen-shake magnitude (px)
 
 
 func _ready() -> void:
@@ -36,6 +38,12 @@ func add_boost(duration: float, multiplier: float = -1.0) -> void:
 	_boost_mult = maxf(_boost_mult, multiplier)
 
 
+# Kick off a screen shake (the bigger 'amount', the harder the rattle). Used for
+# the celebration burst when you clear an event / beat a boss.
+func shake(amount: float) -> void:
+	_shake = maxf(_shake, amount)
+
+
 func _physics_process(delta: float) -> void:
 	if _boost_time > 0.0:
 		_boost_time -= delta
@@ -44,3 +52,12 @@ func _physics_process(delta: float) -> void:
 	# Slide right at the current speed. We never touch Y (vertical view stays
 	# locked, floor pinned to the bottom).
 	global_position.x += current_speed() * delta
+
+	# Screen shake: jitter the VIEW (offset, not position, so it doesn't disturb
+	# the scroll) and let it decay. Vertical is gentler so we don't peek past the
+	# floor. offset resets to zero once the shake is done.
+	if _shake > 0.0:
+		_shake = maxf(0.0, _shake - shake_decay * delta)
+		offset = Vector2(randf_range(-_shake, _shake), randf_range(-_shake, _shake) * 0.5)
+	elif offset != Vector2.ZERO:
+		offset = Vector2.ZERO

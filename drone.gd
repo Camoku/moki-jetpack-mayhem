@@ -12,7 +12,7 @@
 extends Area2D
 
 @export var cleanup_behind: float = 760.0
-@export var extra_speed: float = 115.0   # leftward drift on top of the world scroll (closes on you)
+@export var extra_speed: float = 100.0   # leftward drift on top of the world scroll (closes on you)
 @export var home_speed: float = 150.0    # max vertical tracking (px/sec); kept well under the Moki's speed
 @export var body_size: float = 34.0      # for keeping pickups clear
 

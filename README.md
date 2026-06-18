@@ -44,9 +44,10 @@ Main (Node2D)
 | File | What it does |
 |---|---|
 | `player.gd` | Moki movement (gravity, jetpack, free left/right), crash, powerup effects |
-| `camera.gd` | Constant world scroll + a temporary **boost gear** (`current_speed()`) |
-| `spawner.gd` | Wave/event director: spawns hazards, pickups, and runs all events |
-| `hud.gd` | Distance/coins/multiplier, status line, banners, game-over screen |
+| `camera.gd` | Constant world scroll + a temporary **boost gear** (`current_speed()`) + screen `shake()` |
+| `spawner.gd` | Wave/event director: spawns hazards, pickups, events; runs progression + celebrations |
+| `hud.gd` | Distance/coins/multiplier, status line, banners, boss bar, screen `flash()`, game-over screen |
+| `fireworks.gd` / `Fireworks.tscn` | One-shot `CPUParticles2D` spark burst, popped on the HUD when you clear an event / beat a boss |
 | `game_state.gd` | **Autoload** — saves high_score / best_distance / coins; also holds runtime `blackout` (0→1) |
 | `background.gd` | Slowly tints the space color with distance |
 | `darkness.gd` | On a `CanvasModulate` — dims the world by `GameState.blackout` (the Blackout event) |
@@ -158,6 +159,24 @@ Overdrive makes regular play escalate past the normal cap (shorter spawn gaps, h
 hazard cap, more events/missiles) **and** keeps bosses recurring, buffed (`+HP`, faster).
 Key knobs: `boss_every`, `boss_min_time`, `main_recur_every`, `boss_bonus_coins`,
 `boss_bonus_mult`; per-boss stats live in `boss.gd`'s `_configure_for_kind()`.
+
+### Milestone progression (earned unlocks)
+Obstacles/events aren't unlocked on a clock — they're **earned**. A per-run `_progress`
+counter rises as you clear challenges: **+1 per event survived**, **+2 (a surge) per boss
+beaten**. Each thing has a level in the `UNLOCK_LEVEL` dict and is gated by `_unlocked(key)`
+(`_progress >= level`). So the run starts on basics (asteroids/beams/coins/rings + Storm +
+Coin Rush) and opens up — orbs/missiles → lasers/Frenzy → drones/Highway → Barrage → Cave →
+Crushers → Blackout — with **boss kills surging several unlocks at once**. Distance still
+drives *intensity* (`_difficulty()`); a mini-boss kill also bumps `_boss_power`, folded with
+post-main overdrive into `_surge()` (faster spawns / higher cap). All per-run.
+
+### Celebration / juice (the payoff)
+Clearing an event or beating a boss fires `_celebrate(big)`: a **speed boost** (camera boost
+gear), a **screen shake** (`camera.shake()`), **symmetric fireworks** (`Fireworks.tscn`,
+popped on the HUD — one from each side for an event; both sides + middle for a boss), and a
+banner ("EVENT CLEARED!"; bosses add a gold `hud.flash()`). Coin Rush also speeds the whole
+world up (`coinrush_speed_mult`) for a real challenge, and the reward block always drops a
+**Magnet** so you can vacuum the coins behind it.
 
 ---
 

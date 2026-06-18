@@ -1,0 +1,15 @@
+; ==========================================================
+;  Fireworks.tscn - a one-shot celebration spark burst
+; ==========================================================
+;  Just a CPUParticles2D running fireworks.gd, which configures the whole
+;  burst in code (colour/size set by the spawner). Popped on the HUD when
+;  you clear an event or beat a boss.
+; ==========================================================
+
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://fireworks.gd" id="1_fw"]
+
+[node name="Fireworks" type="CPUParticles2D"]
+emitting = false
+script = ExtResource("1_fw")

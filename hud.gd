@@ -53,6 +53,12 @@ var player: Node2D
 @onready var boss_label: Label = $BossBar/Label
 @onready var game_over_panel: Control = $GameOverPanel
 @onready var final_label: Label = $GameOverPanel/Center/VBox/FinalLabel
+@onready var flash_rect: ColorRect = $Flash
+
+# Celebration screen-flash state: peak alpha that fades to 0.
+var _flash: float = 0.0
+var _flash_color: Color = Color(1, 1, 1, 1)
+@export var flash_fade: float = 2.6   # how fast the flash fades (higher = snappier)
 
 # Full pixel width of the boss health bar (matches the BossBar in Main.tscn).
 const BOSS_BAR_WIDTH := 360.0
@@ -77,6 +83,14 @@ func add_bonus_multiplier(amount: float) -> void:
 	mult_label.text = "Multiplier: x%.1f" % multiplier()
 
 
+# Pop a full-screen colour flash (the passed colour's alpha is the peak), part of
+# the celebration burst on clearing an event / beating a boss. It fades fast.
+func flash(color: Color) -> void:
+	_flash_color = color
+	_flash = color.a
+	flash_rect.visible = true
+
+
 func _ready() -> void:
 	# Let the Moki find us (player.crash() looks us up by this group).
 	add_to_group("hud")
@@ -84,12 +98,20 @@ func _ready() -> void:
 	banner_label.visible = false
 	survival_label.visible = false
 	boss_bar.visible = false
+	flash_rect.visible = false
 	mult_label.text = "Multiplier: x1.0"
 	coin_label.text = "Coins: 0"
 	best_label.text = "Best: %d m" % GameState.best_distance
 
 
 func _process(delta: float) -> void:
+	# Fade the celebration screen-flash out.
+	if _flash > 0.0:
+		_flash = maxf(0.0, _flash - delta * flash_fade)
+		flash_rect.color = Color(_flash_color.r, _flash_color.g, _flash_color.b, _flash)
+		if _flash <= 0.0:
+			flash_rect.visible = false
+
 	# Auto-hide the flash banner a couple of seconds after it appears.
 	if _banner_time > 0.0:
 		_banner_time -= delta

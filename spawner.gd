@@ -26,9 +26,8 @@ extends Node2D
 @export var ring_scene: PackedScene              # fly-through boost ring
 @export var missile_scene: PackedScene           # warning-then-strike missile
 
-# Missiles fire from the right during normal play, after the run warms up.
+# Missiles fire from the right during normal play (once unlocked via progression).
 # They get more frequent (and sometimes double up) the deeper you go.
-@export var missile_min_time: float = 8.0        # No missiles before this many seconds.
 @export var missile_interval_early: float = 8.0  # Gap between missiles early on...
 @export var missile_interval_deep: float = 3.0   # ...and once fully ramped (more frequent).
 @export var missile_double_chance: float = 0.6   # Max chance of a 2-missile wave (at full difficulty).
@@ -36,18 +35,18 @@ extends Node2D
 # Of the non-laser hazards, how often we drop a beam gate instead of an asteroid.
 @export var beam_chance: float = 0.3
 
-# --- Extra obstacles (mixed into normal play once unlocked) ---
+# --- Extra obstacles (mixed into normal play once unlocked via progression) ---
 @export var orb_scene: PackedScene             # bouncing orb
 @export var crusher_scene: PackedScene          # slamming gate
 @export var drone_scene: PackedScene            # homing drone
-@export var orb_min_time: float = 10.0          # No bouncing orbs until this many seconds in.
 @export var orb_chance: float = 0.25            # Chance a non-beam hazard is an orb (once unlocked).
-@export var drone_min_time: float = 15.0        # No drones until this many seconds in.
 @export var drone_chance: float = 0.25          # Chance a non-beam/orb hazard is a drone (once unlocked).
-@export var crusher_min_time: float = 20.0      # No crusher gates until this many seconds in.
 @export var crusher_interval_min: float = 7.0   # Crusher gates arrive on their own slow timer...
 @export var crusher_interval_max: float = 13.0  # ...somewhere in this range (one at a time).
 @export var crusher_clear_window: float = 4.5   # Seconds of "no other hazards" while a gate passes.
+
+# Celebration fireworks (popped on the HUD when you clear an event / beat a boss).
+@export var fireworks_scene: PackedScene
 # Boost rings appear on their own slow, random timer (only in normal play).
 @export var ring_interval_min: float = 6.0
 @export var ring_interval_max: float = 11.0
@@ -100,7 +99,6 @@ extends Node2D
 @export var highway_weight: float = 0.6    # Highway is picked a bit less often (no danger); others = 1.0.
 
 # --- Laser Frenzy (special event: pattern lasers, no asteroids/coins) ---
-@export var frenzy_min_time: float = 8.0       # No frenzies until this many seconds into a run.
 @export var frenzy_duration: float = 10.0      # Capped at 10s; deeper runs get HARDER, not longer.
 @export var frenzy_combo_difficulty: float = 0.6 # Combined V+H patterns appear past this difficulty.
 @export var frenzy_intro_time: float = 1.5     # Calm "incoming!" warning before formations start.
@@ -113,7 +111,6 @@ extends Node2D
 @export var reward_breath: float = 1.0         # Calm pause before the bonus block appears.
 
 # --- Asteroid Storm (event: a burst of fast meteors from the right) ---
-@export var storm_min_time: float = 6.0        # No storms until this many seconds in.
 @export var storm_duration: float = 8.0        # How long a storm lasts.
 @export var storm_intro_time: float = 1.2      # "Incoming!" beat before meteors start.
 @export var storm_spawn_interval: float = 0.65 # Time between meteors early on...
@@ -121,14 +118,12 @@ extends Node2D
 @export var storm_asteroid_speed: float = 220.0 # Extra leftward speed of storm meteors.
 
 # --- Missile Barrage (event: telegraphed volleys of missiles) ---
-@export var barrage_min_time: float = 9.0      # No barrages until this many seconds in.
 @export var barrage_duration: float = 8.0      # How long a barrage lasts.
 @export var barrage_intro_time: float = 1.2    # "Incoming!" beat before the first volley.
 @export var barrage_volley_interval: float = 1.8      # Time between volleys early on...
 @export var barrage_volley_interval_deep: float = 1.3 # ...and once fully ramped (harder).
 
 # --- Boost Highway (event: a flowing chain of boost rings, no hazards) ---
-@export var highway_min_time: float = 11.0     # No highways until this many seconds in.
 @export var highway_duration: float = 8.0      # How long rings keep spawning.
 @export var highway_ring_gap: float = 0.7      # Seconds between rings (spread out).
 @export var highway_center: float = 325.0      # Middle height of the wavy ring path.
@@ -138,16 +133,15 @@ extends Node2D
 @export var highway_boost_multiplier: float = 2.3  # ...and STRONGER (vs 1.8 normal).
 
 # --- Coin Rush (event: a flowing stream of coins; collect them all!) ---
-@export var coinrush_min_time: float = 11.0    # No coin rushes until this many seconds in.
 @export var coinrush_duration: float = 8.0     # How long coins keep streaming.
+@export var coinrush_speed_mult: float = 1.4   # World scrolls this much FASTER during a coin rush (harder).
 @export var coinrush_gap: float = 0.4          # Seconds between coins in the stream.
 @export var coinrush_center: float = 325.0     # Middle height of the wavy coin path.
-@export var coinrush_amplitude: float = 200.0  # How far the path waves up/down.
-@export var coinrush_wave_speed: float = 0.5   # Path curve per coin (radians).
+@export var coinrush_amplitude: float = 250.0  # How far the path waves up/down (bigger swings = harder).
+@export var coinrush_wave_speed: float = 0.78  # Path curve per coin (radians; faster = wigglier/harder).
 
 # --- Narrowing Cave (event: thread a winding tunnel) ---
 @export var cave_wall_scene: PackedScene       # one slice of the cave tunnel
-@export var cave_min_time: float = 11.0        # No caves until this many seconds in.
 @export var cave_duration: float = 8.0         # How long the tunnel keeps streaming.
 @export var cave_intro_time: float = 1.2       # "Incoming!" beat before the walls.
 @export var cave_wall_gap: float = 0.15        # Seconds between wall slices (smaller = finer/smoother edge).
@@ -158,7 +152,6 @@ extends Node2D
 @export var cave_gap_deep: float = 210.0       # ...and once ramped (still roomy).
 
 # --- Blackout (event: the lights go out - only coins/hazards glow) ---
-@export var blackout_min_time: float = 12.0    # No blackouts until this many seconds in.
 @export var blackout_duration: float = 7.0     # How long the lights stay out.
 @export var blackout_fade: float = 0.6         # Seconds to fade the dark in / back out.
 @export var blackout_intro_time: float = 1.2   # Calm beat (lights dimming) before hazards start.
@@ -179,6 +172,27 @@ extends Node2D
 @export var boss_bonus_mult: float = 0.5       # Run-long score-multiplier bump from the main boss.
 
 const MINI_BOSSES: Array[String] = ["cannon", "frigate", "golem"]
+
+# --- Progression (milestone-gated unlocks) ---
+# Obstacles/events aren't unlocked by a clock - they're EARNED. A per-run
+# `_progress` counter rises as you clear challenges (each event survived = +1,
+# each boss beaten = a +boss_progress_bonus surge), and each thing becomes
+# available once _progress reaches its level below. So the run opens up the more
+# you prove yourself; intensity itself still ramps with distance (_difficulty()).
+@export var boss_progress_bonus: int = 2       # Progress gained per boss defeat (a surge of unlocks).
+@export var boss_power_step: float = 0.1       # Each mini-boss beaten nudges spawn intensity up by this.
+
+# Progress level each thing needs (absent = 0 = available from the very start, e.g.
+# asteroids/beams/coins/rings and the starter events Storm + Coin Rush).
+const UNLOCK_LEVEL := {
+	"orbs": 1, "missiles": 1,
+	"lasers": 2, "frenzy": 2,
+	"drones": 3, "highway": 3,
+	"barrage": 4,
+	"cave": 5,
+	"crushers": 6,
+	"blackout": 7,
+}
 
 enum Phase { BUSY, BREATHER, FRENZY_INTRO, FRENZY, REWARD, STORM, BARRAGE, HIGHWAY, COIN_RUSH, CAVE, BLACKOUT, BOSS }
 
@@ -227,6 +241,8 @@ var _last_boss: String = ""             # last boss kind, so we don't repeat bac
 var _main_defeated: bool = false        # has the main boss been beaten this run?
 var _boss_slots_since_main: int = 0     # counts post-main boss slots (for main recurrence)
 var _main_defeat_x: float = 0.0         # camera x when the main boss died (drives overdrive)
+var _progress: int = 0                  # milestone counter: rises per event survived / boss beaten
+var _boss_power: float = 0.0            # intensity bump accumulated from mini-boss kills
 var _run_time: float = 0.0
 var _start_x: float = 0.0
 var _have_start: bool = false
@@ -303,20 +319,20 @@ func _process(delta: float) -> void:
 				_spawn_something()
 				_roll_next_interval()
 
-			# Missiles fire from the right on their own timer (after a warm-up).
-			if missile_scene != null and _run_time >= missile_min_time:
+			# Missiles fire from the right on their own timer (once unlocked).
+			if missile_scene != null and _unlocked("missiles"):
 				_time_to_missile -= delta
 				if _time_to_missile <= 0.0:
-					# Shorter gaps the deeper you are (and tighter still in overdrive), with jitter.
-					_time_to_missile = lerp(missile_interval_early, missile_interval_deep, _difficulty()) * lerp(1.0, 0.65, _overdrive()) * randf_range(0.85, 1.15)
+					# Shorter gaps the deeper you are (and tighter still in a surge), with jitter.
+					_time_to_missile = lerp(missile_interval_early, missile_interval_deep, _difficulty()) * lerp(1.0, 0.65, _surge()) * randf_range(0.85, 1.15)
 					_spawn_missile_wave()
 
-		# Crusher gates arrive on their own slow timer - but only when the lane
-		# is currently clear, so two never stack up.
-		if crusher_scene != null and _run_time >= crusher_min_time and _crusher_clear <= 0.0:
+		# Crusher gates arrive on their own slow timer - but only when unlocked AND
+		# the lane is currently clear, so two never stack up.
+		if crusher_scene != null and _unlocked("crushers") and _crusher_clear <= 0.0:
 			_time_to_crusher -= delta
 			if _time_to_crusher <= 0.0:
-				_time_to_crusher = randf_range(crusher_interval_min, crusher_interval_max) * lerp(1.0, 0.7, _overdrive())
+				_time_to_crusher = randf_range(crusher_interval_min, crusher_interval_max) * lerp(1.0, 0.7, _surge())
 				_spawn_crusher()
 	elif _phase == Phase.FRENZY:
 		# Show how long is left to survive, and emit laser formations.
@@ -404,21 +420,25 @@ func _advance_phase() -> void:
 		Phase.FRENZY_INTRO:
 			_enter_frenzy()    # warning beat over -> formations begin
 		Phase.FRENZY:
-			_show_banner("LASER FRENZY COMPLETE!", Color(0.5, 1.0, 0.6), 2.0)
+			_event_survived()  # "EVENT CLEARED!" banner like the other events
 			_enter_reward()    # frenzy ends -> coin-shower victory window
 		Phase.REWARD:
 			_enter_busy()      # then straight back into the action (fast transition)
 		Phase.STORM:
+			_event_survived()
 			_enter_breather()  # meteors done -> calm, then normal play
 		Phase.BARRAGE:
+			_event_survived()
 			_enter_breather()  # volleys done -> calm, then normal play
 		Phase.HIGHWAY:
 			_finish_highway()  # safety: judge + exit if the timer ran out
 		Phase.COIN_RUSH:
 			_finish_coin_rush()  # safety: judge + exit if the timer ran out
 		Phase.CAVE:
+			_event_survived()
 			_enter_breather()  # tunnel done -> calm (leftover walls finish here)
 		Phase.BLACKOUT:
+			_event_survived()
 			_fade_blackout(0.0)  # bring the lights back up...
 			_enter_breather()    # ...then a calm beat before normal play
 		Phase.BOSS:
@@ -426,7 +446,7 @@ func _advance_phase() -> void:
 		Phase.BREATHER:
 			# The first event is guaranteed (so it shows up promptly); after that, a
 			# breather leads to an event 'event_chance' of the time (more in overdrive).
-			if not _had_event or randf() < lerp(event_chance, 0.85, _overdrive()):
+			if not _had_event or randf() < lerp(event_chance, 0.85, _surge()):
 				# Every Nth event is a scheduled boss (not a random pick).
 				if boss_scene != null and _run_time >= boss_min_time and _events_since_boss + 1 >= boss_every:
 					_events_since_boss = 0
@@ -457,21 +477,21 @@ func _advance_phase() -> void:
 func _pick_event() -> String:
 	var candidates: Array = []   # each entry is [name, weight]
 	if vertical_laser_scene != null and horizontal_laser_scene != null \
-			and _run_time >= frenzy_min_time and _last_event != "frenzy":
+			and _unlocked("frenzy") and _last_event != "frenzy":
 		candidates.append(["frenzy", 1.0])
-	if obstacle_scene != null and _run_time >= storm_min_time and _last_event != "storm":
+	if obstacle_scene != null and _unlocked("storm") and _last_event != "storm":
 		candidates.append(["storm", 1.0])
-	if missile_scene != null and _run_time >= barrage_min_time and _last_event != "barrage":
+	if missile_scene != null and _unlocked("barrage") and _last_event != "barrage":
 		candidates.append(["barrage", 1.0])
-	if ring_scene != null and _run_time >= highway_min_time and _last_event != "highway":
+	if ring_scene != null and _unlocked("highway") and _last_event != "highway":
 		candidates.append(["highway", highway_weight])
-	if coin_scene != null and _run_time >= coinrush_min_time and _last_event != "coinrush":
+	if coin_scene != null and _unlocked("coinrush") and _last_event != "coinrush":
 		candidates.append(["coinrush", highway_weight])   # calm event, weighted like highway
-	if cave_wall_scene != null and _run_time >= cave_min_time and _last_event != "cave":
+	if cave_wall_scene != null and _unlocked("cave") and _last_event != "cave":
 		candidates.append(["cave", 1.0])
 	# Blackout needs both glowing asteroids AND glowing coins to make sense.
 	if obstacle_scene != null and coin_scene != null \
-			and _run_time >= blackout_min_time and _last_event != "blackout":
+			and _unlocked("blackout") and _last_event != "blackout":
 		candidates.append(["blackout", 1.0])
 
 	if candidates.is_empty():
@@ -569,6 +589,7 @@ func _spawn_highway_ring() -> void:
 # Judge the highway once every ring is resolved: a clean sweep earns the
 # "BOOST MASTER!" coin reward; otherwise just return to normal play.
 func _finish_highway() -> void:
+	_event_survived()   # progression tick + celebration burst
 	if _highway_spawned > 0 and _highway_perfect:
 		_show_banner("BOOST MASTER!", Color(0.4, 1.0, 0.8), 2.5)
 		_enter_reward()
@@ -602,6 +623,10 @@ func _enter_coin_rush() -> void:
 	_rush_collected = 0
 	_rush_perfect = true
 	_phase_time_left = coinrush_duration + 10.0   # generous safety cap; we exit earlier
+	# Speed the WHOLE world up for the duration so the coin stream rushes by faster
+	# (reuses the camera's boost gear). Makes the perfect sweep a real challenge.
+	if camera != null and camera.has_method("add_boost"):
+		camera.add_boost(coinrush_duration + 6.0, coinrush_speed_mult)
 	_show_banner(">>  COIN RUSH  <<", Color(1.0, 0.85, 0.3), 2.0)
 
 
@@ -619,6 +644,7 @@ func _spawn_rush_coin() -> void:
 # Judge the coin rush once every coin is resolved: a clean sweep earns the
 # "COIN MASTER!" reward; otherwise just return to normal play.
 func _finish_coin_rush() -> void:
+	_event_survived()   # progression tick + celebration burst
 	if _rush_spawned > 0 and _rush_perfect:
 		_show_banner("COIN MASTER!", Color(1.0, 0.85, 0.3), 2.5)
 		_enter_reward()
@@ -698,7 +724,7 @@ func _enter_boss() -> void:
 		boss.missile_scene = missile_scene
 		boss.obstacle_scene = obstacle_scene
 		boss.difficulty = _difficulty()
-		boss.overdrive = _overdrive()
+		boss.overdrive = _surge()   # mini-boss power + post-main overdrive (buffs later bosses)
 		add_child(boss)
 	_show_banner(_boss_label(kind), Color(1.0, 0.5, 0.4), 1.7)
 
@@ -746,7 +772,12 @@ func boss_defeated(kind: String) -> void:
 	else:
 		if not _bosses_defeated.has(kind):
 			_bosses_defeated.append(kind)
+		_boss_power += boss_power_step   # mini-boss kill nudges intensity up
 		_show_banner("%s DESTROYED!" % _boss_short(kind), Color(1.0, 0.85, 0.4), 2.5)
+	# Beating a boss is a big milestone: a progress SURGE (unlocks several things
+	# at once - the new hazards just start showing up) and the big celebration blast.
+	_add_progress(boss_progress_bonus)
+	_celebrate(true)
 	_enter_reward()
 
 
@@ -785,6 +816,86 @@ func _overdrive() -> float:
 	if not _main_defeated or camera == null:
 		return 0.0
 	return clamp((camera.global_position.x - _main_defeat_x) / ramp_distance, 0.0, 1.0)
+
+
+# The combined intensity surge folded into spawn aggression: mini-boss kills
+# (_boss_power) plus the post-main overdrive. 0..1.
+func _surge() -> float:
+	return clamp(_boss_power + _overdrive(), 0.0, 1.0)
+
+
+# Is this obstacle/event unlocked yet? (Anything not in the table is level 0 =
+# available from the start.)
+func _unlocked(key: String) -> bool:
+	return _progress >= int(UNLOCK_LEVEL.get(key, 0))
+
+
+# Advance the milestone counter (unlocks happen silently - the newly available
+# obstacles/events simply start showing up).
+func _add_progress(amount: int) -> void:
+	_progress += amount
+
+
+# Called when the player clears any event: progression tick + a small "nice!" burst
+# (speed pop + shake) + a "cleared" banner. Pass "" for the banner when the caller
+# already shows its own (e.g. the frenzy's "COMPLETE!").
+func _event_survived(banner: String = "EVENT CLEARED!") -> void:
+	_add_progress(1)
+	_celebrate(false)
+	if banner != "":
+		_show_banner(banner, Color(0.6, 1.0, 0.7, 1.0), 1.6)
+
+
+# A celebration burst - the payoff "brain go brr" moment. A speed surge + a screen
+# flash + a screen shake, scaled up BIG for a boss kill (the "YOU DID IT" blast)
+# and lighter for clearing an event.
+func _celebrate(big: bool) -> void:
+	if camera != null:
+		if camera.has_method("add_boost"):
+			camera.add_boost(3.0 if big else 1.2, 2.3 if big else 1.4)
+		if camera.has_method("shake"):
+			camera.shake(15.0 if big else 5.0)
+	# A gold screen-flash ONLY for boss kills (the event flash was too jarring).
+	if big:
+		var hud := get_tree().get_first_node_in_group("hud")
+		if hud != null and hud.has_method("flash"):
+			hud.flash(Color(1.0, 0.92, 0.5, 0.5))
+	_burst_fireworks(big)
+
+
+const FW_COLORS: Array[Color] = [Color(1, 0.35, 0.35), Color(0.4, 0.65, 1.0), Color(1, 0.85, 0.3), Color(0.5, 1.0, 0.6), Color(1, 0.55, 1.0)]
+
+# Pop celebration fireworks on the HUD, placed SYMMETRICALLY (screen is 1280 wide,
+# centre x = 640): an event fires one from each side; a boss fires both sides PLUS
+# the middle. Mirrored pairs share a colour so it reads as symmetric.
+func _burst_fireworks(big: bool) -> void:
+	if fireworks_scene == null:
+		return
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud == null:
+		return
+	var cx := 640.0
+	if big:
+		var c_mid := FW_COLORS[randi() % FW_COLORS.size()]
+		var c_in := FW_COLORS[randi() % FW_COLORS.size()]
+		var c_out := FW_COLORS[randi() % FW_COLORS.size()]
+		_pop_firework(hud, Vector2(cx, 150.0), c_mid, true)            # middle
+		_pop_firework(hud, Vector2(cx - 290.0, 200.0), c_in, true)     # inner pair
+		_pop_firework(hud, Vector2(cx + 290.0, 200.0), c_in, true)
+		_pop_firework(hud, Vector2(cx - 540.0, 250.0), c_out, true)    # outer pair
+		_pop_firework(hud, Vector2(cx + 540.0, 250.0), c_out, true)
+	else:
+		var c := FW_COLORS[randi() % FW_COLORS.size()]
+		_pop_firework(hud, Vector2(cx - 300.0, 190.0), c, false)       # left
+		_pop_firework(hud, Vector2(cx + 300.0, 190.0), c, false)       # right
+
+
+func _pop_firework(hud: Node, pos: Vector2, color: Color, big: bool) -> void:
+	var fw := fireworks_scene.instantiate()
+	fw.fw_big = big
+	fw.fw_color = color
+	fw.position = pos
+	hud.add_child(fw)
 
 
 func _hide_boss_bar() -> void:
@@ -850,7 +961,7 @@ func _difficulty() -> float:
 # Base seconds between spawns right now (shorter as difficulty rises). After the
 # main boss, overdrive squeezes the gap further so regular play keeps escalating.
 func _current_interval() -> float:
-	return lerp(start_interval, min_interval, _difficulty()) * lerp(1.0, 0.6, _overdrive())
+	return lerp(start_interval, min_interval, _difficulty()) * lerp(1.0, 0.6, _surge())
 
 
 # Pick the delay until the NEXT spawn, with a bit of randomness so the
@@ -863,19 +974,19 @@ func _roll_next_interval() -> void:
 func _spawn_something() -> void:
 	var t := _difficulty()
 
-	# Lasers get more common the further you go (up to ~45% of spawns),
-	# but only if enough time has passed since the last laser. Lasers are
-	# transient + telegraphed, so they ignore the hazard cap below.
+	# Lasers get more common the further you go (up to ~45% of spawns), once
+	# unlocked + enough time since the last laser. Lasers are transient +
+	# telegraphed, so they ignore the hazard cap below.
 	var laser_chance := 0.45 * t
-	if randf() < laser_chance and _time_since_laser >= laser_cooldown:
+	if _unlocked("lasers") and randf() < laser_chance and _time_since_laser >= laser_cooldown:
 		_spawn_laser()
 		_time_since_laser = 0.0
 		return
 
 	# Persistent hazards (asteroids/beams) respect an on-screen cap that grows
-	# with difficulty - so density rises smoothly but never clutters. Overdrive
-	# (post-main-boss) lifts the cap a few notches for the harder endless run.
-	var cap := roundi(lerp(float(max_hazards_min), float(max_hazards_max), t)) + int(round(_overdrive() * 3.0))
+	# with difficulty - so density rises smoothly but never clutters. A surge
+	# (mini-boss kills + post-main overdrive) lifts the cap a few notches.
+	var cap := roundi(lerp(float(max_hazards_min), float(max_hazards_max), t)) + int(round(_surge() * 3.0))
 	if get_tree().get_nodes_in_group("asteroid").size() >= cap:
 		return   # plenty on screen already - let it breathe this beat
 
@@ -883,9 +994,9 @@ func _spawn_something() -> void:
 	# orb / drone, otherwise a plain asteroid. (All count toward the cap above.)
 	if beam_obstacle_scene != null and randf() < beam_chance:
 		_spawn_beam()
-	elif orb_scene != null and _run_time >= orb_min_time and randf() < orb_chance:
+	elif orb_scene != null and _unlocked("orbs") and randf() < orb_chance:
 		_spawn_orb()
-	elif drone_scene != null and _run_time >= drone_min_time and randf() < drone_chance:
+	elif drone_scene != null and _unlocked("drones") and randf() < drone_chance:
 		_spawn_drone()
 	else:
 		_spawn_asteroid(t)
@@ -946,7 +1057,7 @@ func _spawn_drone() -> void:
 		y = randf_range(140.0, 520.0)
 		tries += 1
 	drone.position = Vector2(spawn_x, y)
-	drone.home_speed = lerp(190.0, 300.0, _difficulty())   # tracks faster deep in a run
+	drone.home_speed = lerp(160.0, 260.0, _difficulty())   # tracks a bit faster deep in a run
 	add_child(drone)
 
 
@@ -1146,10 +1257,11 @@ func _spawn_horizontal_formation() -> void:
 func _spawn_reward_block() -> void:
 	var front_x := camera.global_position.x + 700.0
 
-	# The powerup, centred and IN FRONT (smaller x = reached first).
+	# The powerup, centred and IN FRONT (smaller x = reached first). Always a
+	# Magnet, so you reliably vacuum up the coin block right behind it.
 	if powerup_scene != null:
 		var p := powerup_scene.instantiate()
-		p.type = ["magnet", "doubler"].pick_random()
+		p.type = "magnet"
 		p.position = Vector2(front_x, 330.0)
 		add_child(p)
 
