@@ -60,7 +60,7 @@ Main (Node2D)
 | `BeamObstacle.tscn` / `beam_obstacle.gd` | Floating capped laser bar (H or V) |
 | `Missile.tscn` / `missile.gd` | Warns ("!") at the right edge, then strikes left |
 | `CaveWall.tscn` / `cave_wall.gd` | One tunnel slice (top+bottom walls + gap) for the Cave event |
-| `LaserCannon.tscn` / `laser_cannon.gd` | The mini-boss (every 3rd event); reuses the lasers as its attacks |
+| `Boss.tscn` / `boss.gd` | Every boss (one scene, `kind` picks which); reuses the hazards as its attacks |
 
 ### Pickups
 | Scene / Script | Pickup |
@@ -126,24 +126,35 @@ to 0 in `_ready()` (it's an autoload value, so it must be cleared each run). Not
 `ParallaxBackground` is its own `CanvasLayer`, so it needs its **own** `CanvasModulate`
 (there are two `Darkness` nodes — one for the world, one for the background).
 
-### The mini-boss (Laser Cannon) — every 3rd event
-Not a random pick: the spawner counts events and makes **every `boss_every` (3)** one the
-boss instead (`Phase.BOSS`, `_enter_boss()`), after `boss_min_time`. The Moki has no
-weapon, so the fight is a dodge-then-punish loop run entirely by `laser_cannon.gd`:
+### Bosses — the every-3rd-event progression
+Not a random pick: the spawner counts events and makes **every `boss_every` (3)** one a
+boss (`Phase.BOSS`, `_enter_boss()`), after `boss_min_time`. The Moki has no weapon, so
+every boss is the same dodge-then-punish loop in `boss.gd` — only the attack and looks
+change, switched by **`kind`** (the "one scene, a `kind` picks behaviour" pattern):
 
-- **INTRO** — announcement banner plays while the cannon waits off-screen, then it drops
-  in (`arrive_delay`) and the HUD HP bar appears.
-- **ATTACK** — fires a telegraphed beam pattern (reusing `VerticalLaser`/`HorizontalLaser`,
-  including a new optional `sweep_speed` that makes a beam slide across); the core is sealed.
-- **OVERHEAT** — beams stop, the **core** glows and becomes touchable; fly the Moki into it
-  (`Core.body_entered`) to deal −1 HP (with a short `hit_cooldown`).
-- Loop until **HP 0 → destroyed** (→ shared reward) or **`max_time` → retreat** (no reward).
+- **INTRO** — announcement banner plays while the boss waits off-screen, then it drops in
+  (`arrive_delay`) and the HUD HP bar appears (with the boss's name).
+- **ATTACK** — fires a telegraphed pattern (per kind, below); the core is sealed.
+- **OVERHEAT** — the attack stops, the **core** glows and becomes touchable; fly the Moki
+  into it (`Core.body_entered`) for −1 HP (short `hit_cooldown`).
+- Loop until **HP 0 → destroyed** (→ reward) or **`max_time` → retreat** (no reward).
 
-Only the **beams are deadly** — the housing is scenery and the core is *beneficial*, so
-there's no cheap "touched the boss = dead". The boss reports HP to the HUD
-(`set_boss_health` / `hide_boss_bar`) and calls `spawner.boss_defeated()` /
-`boss_failed()` when it ends. Key knobs live on `laser_cannon.gd`: `max_hp`, the phase
-times, `max_time`, `sweep_speed`.
+Only a boss's **attack** is deadly — the housing is scenery and the core is *beneficial*
+(no cheap "touched it = dead"). Attacks all reuse existing hazards: **cannon** = sweep/lane
+beams; **frigate** = telegraphed missile volleys; **golem** = fast asteroid waves; **main
+(DREADNOUGHT)** round-robins the **Laser-Frenzy walls** (vertical / horizontal / combined
+safe-pocket) + missiles + meteors.
+
+**Progression (per-run, in `spawner.gd`):** the three mini-bosses (`cannon`, `frigate`,
+`golem`) appear in turn; the gate is **defeat**, not encounter (`_bosses_defeated`) — a
+failed mini recurs until beaten. Once all three are down, the next boss slot is the
+**main boss**. Beating it (`boss_defeated("main")`) grants the **huge bonus** — a big coin
+payout (`hud.add_coin`), a run-long score-mult bump (`hud.add_bonus_multiplier`), and a
+free shield — and flips on **overdrive** (`_overdrive()`, ramps from `_main_defeat_x`).
+Overdrive makes regular play escalate past the normal cap (shorter spawn gaps, higher
+hazard cap, more events/missiles) **and** keeps bosses recurring, buffed (`+HP`, faster).
+Key knobs: `boss_every`, `boss_min_time`, `main_recur_every`, `boss_bonus_coins`,
+`boss_bonus_mult`; per-boss stats live in `boss.gd`'s `_configure_for_kind()`.
 
 ---
 

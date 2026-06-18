@@ -35,7 +35,8 @@ reward beats so it's not pure stress.
 ## 3. Current status (2026-06-18)
 
 Core loop, movement, scoring, save system, 5 hazard types, 4 powerups, coins, a
-7-event rotation, and a recurring **mini-boss** are **built and compile-clean**. Biggest gap: **no upgrade store yet**
+7-event rotation, and a full **boss progression** (3 mini-bosses → a main boss → endless
+overdrive) are **built and compile-clean**. Biggest gap: **no upgrade store yet**
 (coins bank but can't be spent), and no audio/juice/real art. Balance is unverified by
 real playtesting in places (noted per item).
 
@@ -60,9 +61,16 @@ real playtesting in places (noted per item).
       Coin Rush, Narrow Cave, **Blackout** — fair weighted rotation, no repeats, clean-sweep rewards
 - [x] **2D lighting** — `CanvasModulate` darkness + per-object `PointLight2D` glows
       (coins/asteroids/Moki), driven by `GameState.blackout` (for the Blackout event)
-- [x] **Mini-boss: Laser Cannon** — every 3rd event; dodge its telegraphed sweeping
-      beams, fly into the exposed core during OVERHEAT to deplete HP; kill → reward,
-      time out → retreat. HUD boss health bar.
+- [x] **Bosses** — one `Boss.tscn`/`boss.gd` driven by `kind`; the boss slot is every 3rd
+      event. Dodge the telegraphed attack, fly into the exposed core during OVERHEAT to
+      deplete HP (kill → reward, time out → retreat). HUD boss health bar (per-boss name).
+  - [x] **3 mini-bosses:** Laser Cannon (beams), Missile Frigate (missile volleys),
+        Meteor Golem (asteroid waves) — appear in turn.
+  - [x] **Main boss: DREADNOUGHT** — unlocked once all 3 minis are defeated; bigger, 8 HP,
+        cycles Laser-Frenzy walls + missiles + meteors. Beating it grants a **huge bonus**
+        (big coin payout + run-long score-mult bump + free shield).
+  - [x] **Endless overdrive** — after the main boss, regular events escalate past the cap
+        and the boss rotation recurs (buffed). All per-run.
 
 ### 🔜 To build (roughly in priority order)
 - [ ] **Upgrade Store** *(next — the big one)*. End-of-run shop to spend banked coins on

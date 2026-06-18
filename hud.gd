@@ -35,6 +35,10 @@ var distance_m: int = 0   # how far we have flown this run, in metres
 var run_coins: int = 0
 var game_over: bool = false
 
+# A run-long score-multiplier bump (granted by beating the main boss). Adds on
+# top of the coin-tier multiplier for the rest of the run.
+var bonus_multiplier: float = 0.0
+
 var player: Node2D
 
 @onready var distance_label: Label = $DistanceLabel
@@ -63,7 +67,14 @@ var _banner_time: float = 0.0
 func multiplier() -> float:
 	# floori() divides then rounds DOWN to a whole number of tiers.
 	var tiers := floori(float(run_coins) / float(coins_per_tier))
-	return 1.0 + tiers * multiplier_per_tier
+	return 1.0 + tiers * multiplier_per_tier + bonus_multiplier
+
+
+# Add a permanent (rest-of-run) bump to the score multiplier - the main boss's
+# run-long reward. Refreshes the on-screen multiplier readout.
+func add_bonus_multiplier(amount: float) -> void:
+	bonus_multiplier += amount
+	mult_label.text = "Multiplier: x%.1f" % multiplier()
 
 
 func _ready() -> void:
@@ -116,9 +127,9 @@ func set_status(text: String) -> void:
 
 # Called by the mini-boss to show/update its health bar. The fill shrinks as
 # its HP drops; at 0 the spawner hides the bar via hide_boss_bar().
-func set_boss_health(cur: int, mx: int) -> void:
+func set_boss_health(cur: int, mx: int, boss_name: String = "BOSS") -> void:
 	boss_bar.visible = true
-	boss_label.text = "LASER CANNON   %d / %d" % [cur, mx]
+	boss_label.text = "%s   %d / %d" % [boss_name, cur, mx]
 	var frac: float = clampf(float(cur) / float(mx), 0.0, 1.0)
 	boss_fill.size.x = BOSS_BAR_WIDTH * frac
 

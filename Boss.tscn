@@ -1,32 +1,32 @@
 ; ==========================================================
-;  LaserCannon.tscn - the Laser Cannon mini-boss
+;  Boss.tscn - one scene for every boss (boss.gd's `kind` picks which)
 ; ==========================================================
-;  A ceiling-mounted turret that hangs at the top of the screen and
-;  rides along with the camera (screen-locked, like the lasers). It
-;  runs laser_cannon.gd, which drives the whole fight:
-;    INTRO -> (ATTACK <-> OVERHEAT) -> DYING / RETREAT
+;  A ceiling-mounted turret that hangs at the top of the screen and rides
+;  along with the camera (screen-locked, like the lasers). boss.gd tints the
+;  housing and drives the whole fight from its `kind`:
+;     INTRO -> (ATTACK <-> OVERHEAT) -> DYING / RETREAT
 ;
 ;  Tree:
-;    LaserCannon (Node2D)        <- the boss brain (laser_cannon.gd)
-;    +-- Housing (ColorRect)     <- the turret body (decorative, NOT deadly)
+;    Boss (Node2D)               <- the boss brain (boss.gd)
+;    +-- Housing (ColorRect)     <- the turret body (recoloured per kind; NOT deadly)
 ;    +-- Barrel  (ColorRect)     <- a stub pointing down (decorative)
 ;    +-- Core (Area2D)           <- the WEAK POINT you fly into to damage it
 ;         +-- CoreShape          <- its touch area
 ;         +-- CoreRect           <- the glowing square (red=sealed, hot=exposed)
 ;
-;  Only the cannon's BEAMS are deadly; the housing is just scenery and the
-;  core is beneficial - so there is no cheap "you touched the boss = dead".
+;  Only a boss's ATTACK (beams / missiles / meteors) is deadly; the housing is
+;  scenery and the core is beneficial - so there is no cheap "touched it = dead".
 ; ==========================================================
 
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://laser_cannon.gd" id="1_cannon"]
+[ext_resource type="Script" path="res://boss.gd" id="1_boss"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_core"]
 size = Vector2(72, 72)
 
-[node name="LaserCannon" type="Node2D"]
-script = ExtResource("1_cannon")
+[node name="Boss" type="Node2D"]
+script = ExtResource("1_boss")
 
 [node name="Housing" type="ColorRect" parent="."]
 offset_left = -120.0

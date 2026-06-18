@@ -26,7 +26,7 @@
 
 [ext_resource type="Script" path="res://player.gd" id="1_player"]
 [ext_resource type="Script" path="res://darkness.gd" id="15_darkness"]
-[ext_resource type="PackedScene" path="res://LaserCannon.tscn" id="16_cannon"]
+[ext_resource type="PackedScene" path="res://Boss.tscn" id="16_boss"]
 [ext_resource type="Script" path="res://background.gd" id="2_bg"]
 [ext_resource type="PackedScene" path="res://Obstacle.tscn" id="3_obstacle"]
 [ext_resource type="Script" path="res://spawner.gd" id="4_spawner"]
@@ -393,7 +393,7 @@ beam_obstacle_scene = ExtResource("11_beam")
 ring_scene = ExtResource("12_ring")
 missile_scene = ExtResource("13_missile")
 cave_wall_scene = ExtResource("14_cavewall")
-cannon_scene = ExtResource("16_cannon")
+boss_scene = ExtResource("16_boss")
 
 ; ---------------- HUD (score + game over) ----------------
 ; A CanvasLayer draws in screen space (stays put as the world scrolls).

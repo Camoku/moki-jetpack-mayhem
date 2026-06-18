@@ -153,10 +153,19 @@ extends Node2D
 @export var blackout_asteroid_interval_deep: float = 0.75 # ...and once fully ramped (harder).
 @export var blackout_coin_interval: float = 1.6 # Gap between glowing coin rows (the reward for braving it).
 
-# --- Mini-Boss: Laser Cannon (a scheduled set-piece, every Nth event) ---
-@export var cannon_scene: PackedScene          # the LaserCannon boss
-@export var boss_min_time: float = 30.0        # No mini-boss until this many seconds in.
-@export var boss_every: int = 3                # Every Nth event is the boss instead of a random one.
+# --- Bosses (scheduled set-pieces; the boss slot is every Nth event) ---
+# Three mini-bosses (cannon / frigate / golem) appear in turn; once all three are
+# defeated, the next boss slot is the MAIN boss (the Dreadnought). Beating it grants
+# a huge bonus and flips the run into "overdrive" - harder regular events, and the
+# boss rotation keeps recurring (buffed). All of this is per-run.
+@export var boss_scene: PackedScene            # the generic Boss scene (kind picks which)
+@export var boss_min_time: float = 30.0        # No bosses until this many seconds in.
+@export var boss_every: int = 3                # Every Nth event is a boss instead of a random one.
+@export var main_recur_every: int = 4          # After the main boss, every Nth boss slot is the main again.
+@export var boss_bonus_coins: int = 250        # Coin payout for destroying the main boss.
+@export var boss_bonus_mult: float = 0.5       # Run-long score-multiplier bump from the main boss.
+
+const MINI_BOSSES: Array[String] = ["cannon", "frigate", "golem"]
 
 enum Phase { BUSY, BREATHER, FRENZY_INTRO, FRENZY, REWARD, STORM, BARRAGE, HIGHWAY, COIN_RUSH, CAVE, BLACKOUT, BOSS }
 
@@ -197,7 +206,12 @@ var _blackout_asteroid_timer: float = 0.0
 var _blackout_coin_timer: float = 0.0
 var _last_event: String = ""            # the last event we ran, so we don't repeat it
 var _had_event: bool = false            # the FIRST event is guaranteed; later ones roll the dice
-var _events_since_boss: int = 0         # counts events so every Nth one is the mini-boss
+var _events_since_boss: int = 0         # counts events so every Nth one is a boss
+var _bosses_defeated: Array[String] = []  # which mini-bosses have been beaten this run
+var _last_boss: String = ""             # last boss kind, so we don't repeat back-to-back
+var _main_defeated: bool = false        # has the main boss been beaten this run?
+var _boss_slots_since_main: int = 0     # counts post-main boss slots (for main recurrence)
+var _main_defeat_x: float = 0.0         # camera x when the main boss died (drives overdrive)
 var _run_time: float = 0.0
 var _start_x: float = 0.0
 var _have_start: bool = false
@@ -270,8 +284,8 @@ func _process(delta: float) -> void:
 		if missile_scene != null and _run_time >= missile_min_time:
 			_time_to_missile -= delta
 			if _time_to_missile <= 0.0:
-				# Shorter gaps the deeper you are, with a little jitter.
-				_time_to_missile = lerp(missile_interval_early, missile_interval_deep, _difficulty()) * randf_range(0.85, 1.15)
+				# Shorter gaps the deeper you are (and tighter still in overdrive), with jitter.
+				_time_to_missile = lerp(missile_interval_early, missile_interval_deep, _difficulty()) * lerp(1.0, 0.65, _overdrive()) * randf_range(0.85, 1.15)
 				_spawn_missile_wave()
 	elif _phase == Phase.FRENZY:
 		# Show how long is left to survive, and emit laser formations.
@@ -377,13 +391,13 @@ func _advance_phase() -> void:
 			_fade_blackout(0.0)  # bring the lights back up...
 			_enter_breather()    # ...then a calm beat before normal play
 		Phase.BOSS:
-			boss_failed()        # safety: the cannon's own timer should end it first
+			boss_failed(_last_boss)  # safety: the boss's own timer should end it first
 		Phase.BREATHER:
-			# The first event is guaranteed (so it shows up promptly); after
-			# that, a breather leads to an event 'event_chance' of the time.
-			if not _had_event or randf() < event_chance:
-				# Every Nth event is the scheduled mini-boss (not a random pick).
-				if cannon_scene != null and _run_time >= boss_min_time and _events_since_boss + 1 >= boss_every:
+			# The first event is guaranteed (so it shows up promptly); after that, a
+			# breather leads to an event 'event_chance' of the time (more in overdrive).
+			if not _had_event or randf() < lerp(event_chance, 0.85, _overdrive()):
+				# Every Nth event is a scheduled boss (not a random pick).
+				if boss_scene != null and _run_time >= boss_min_time and _events_since_boss + 1 >= boss_every:
 					_events_since_boss = 0
 					_had_event = true
 					_enter_boss()
@@ -635,35 +649,111 @@ func _fade_blackout(target: float) -> void:
 	tw.tween_property(GameState, "blackout", target, blackout_fade)
 
 
-# The Laser Cannon mini-boss. We spawn it, hand it what it needs, and then just
-# wait: the cannon runs its own fight and calls boss_defeated()/boss_failed()
-# back when it is over. _phase_time_left is only a generous safety net.
+# A boss: a scheduled set-piece. We pick which kind to send, spawn it, hand it
+# what it needs, and wait for boss_defeated()/boss_failed() back. _phase_time_left
+# is only a generous safety net (the boss ends the fight itself).
 func _enter_boss() -> void:
 	_phase = Phase.BOSS
 	_last_event = "boss"
-	_phase_time_left = 60.0
+	_phase_time_left = 70.0
 	_set_status("")
-	if cannon_scene != null:
-		var boss := cannon_scene.instantiate()
+	var kind := _pick_boss_kind()
+	_last_boss = kind
+	if boss_scene != null:
+		var boss := boss_scene.instantiate()
+		boss.kind = kind
 		boss.vertical_laser_scene = vertical_laser_scene
 		boss.horizontal_laser_scene = horizontal_laser_scene
+		boss.missile_scene = missile_scene
+		boss.obstacle_scene = obstacle_scene
 		boss.difficulty = _difficulty()
+		boss.overdrive = _overdrive()
 		add_child(boss)
-	_show_banner(">>  MINI-BOSS: LASER CANNON  <<", Color(1.0, 0.5, 0.4), 1.7)
+	_show_banner(_boss_label(kind), Color(1.0, 0.5, 0.4), 1.7)
 
 
-# Called by the cannon when its HP hits zero: celebrate + drop the big reward.
-func boss_defeated() -> void:
-	_show_banner("CANNON DESTROYED!", Color(1.0, 0.85, 0.4), 2.5)
+# Which boss to send next. Pre-main: the next undefeated mini-boss, or the main
+# boss once all three are down. Post-main: recurring mini-bosses, with the main
+# boss returning every 'main_recur_every' boss slots.
+func _pick_boss_kind() -> String:
+	if not _main_defeated:
+		var undefeated := MINI_BOSSES.filter(func(k): return not _bosses_defeated.has(k))
+		if undefeated.is_empty():
+			return "main"   # all three mini-bosses beaten -> the climax
+		return _pick_avoiding_last(undefeated)
+	_boss_slots_since_main += 1
+	if _boss_slots_since_main % main_recur_every == 0:
+		return "main"
+	return _pick_avoiding_last(MINI_BOSSES)
+
+
+# Random pick from 'options', avoiding the last boss when there's a choice.
+func _pick_avoiding_last(options: Array) -> String:
+	var pool := options.duplicate()
+	if pool.size() > 1 and pool.has(_last_boss):
+		pool.erase(_last_boss)
+	return str(pool[randi() % pool.size()])
+
+
+func _boss_label(kind: String) -> String:
+	match kind:
+		"frigate": return ">>  MINI-BOSS: MISSILE FRIGATE  <<"
+		"golem": return ">>  MINI-BOSS: METEOR GOLEM  <<"
+		"main": return ">>>  BOSS: DREADNOUGHT  <<<"
+		_: return ">>  MINI-BOSS: LASER CANNON  <<"
+
+
+# Called by a boss when its HP hits zero. The main boss also grants the huge
+# bonus and flips the run into overdrive; mini-bosses are marked defeated.
+func boss_defeated(kind: String) -> void:
 	_hide_boss_bar()
+	if kind == "main":
+		_main_defeated = true
+		_main_defeat_x = camera.global_position.x   # overdrive ramps from here
+		_grant_main_bonus()
+		_show_banner("DREADNOUGHT DESTROYED!  +%d COINS" % boss_bonus_coins, Color(1.0, 0.85, 0.4), 3.0)
+	else:
+		if not _bosses_defeated.has(kind):
+			_bosses_defeated.append(kind)
+		_show_banner("%s DESTROYED!" % _boss_short(kind), Color(1.0, 0.85, 0.4), 2.5)
 	_enter_reward()
 
 
-# Called by the cannon if it survives its time cap (or via the safety above):
-# it retreats, no reward, back to a calm breather.
-func boss_failed() -> void:
+# Called by a boss if it survives its time cap (or via the safety above): it
+# retreats, no reward. A failed mini-boss is NOT marked defeated, so it recurs
+# until you beat it (you must clear all three to unlock the main boss).
+func boss_failed(_kind: String) -> void:
 	_hide_boss_bar()
 	_enter_breather()
+
+
+func _boss_short(kind: String) -> String:
+	match kind:
+		"frigate": return "FRIGATE"
+		"golem": return "GOLEM"
+		_: return "CANNON"
+
+
+# The main-boss reward: a big coin payout (banks + jumps the multiplier), a
+# run-long score-multiplier bump, and a free shield - on top of the usual block.
+func _grant_main_bonus() -> void:
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud != null:
+		if hud.has_method("add_coin"):
+			hud.add_coin(boss_bonus_coins)
+		if hud.has_method("add_bonus_multiplier"):
+			hud.add_bonus_multiplier(boss_bonus_mult)
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and player.has_method("gain_powerup"):
+		player.gain_powerup("shield")
+
+
+# 0 until the main boss is beaten, then ramps 0 -> 1 over the next ramp_distance
+# of travel. Drives the post-main "overdrive": harder regular play + buffed bosses.
+func _overdrive() -> float:
+	if not _main_defeated or camera == null:
+		return 0.0
+	return clamp((camera.global_position.x - _main_defeat_x) / ramp_distance, 0.0, 1.0)
 
 
 func _hide_boss_bar() -> void:
@@ -726,9 +816,10 @@ func _difficulty() -> float:
 	return clamp((camera.global_position.x - _start_x) / ramp_distance, 0.0, 1.0)
 
 
-# Base seconds between spawns right now (shorter as difficulty rises).
+# Base seconds between spawns right now (shorter as difficulty rises). After the
+# main boss, overdrive squeezes the gap further so regular play keeps escalating.
 func _current_interval() -> float:
-	return lerp(start_interval, min_interval, _difficulty())
+	return lerp(start_interval, min_interval, _difficulty()) * lerp(1.0, 0.6, _overdrive())
 
 
 # Pick the delay until the NEXT spawn, with a bit of randomness so the
@@ -751,8 +842,9 @@ func _spawn_something() -> void:
 		return
 
 	# Persistent hazards (asteroids/beams) respect an on-screen cap that grows
-	# with difficulty - so density rises smoothly but never clutters.
-	var cap := roundi(lerp(float(max_hazards_min), float(max_hazards_max), t))
+	# with difficulty - so density rises smoothly but never clutters. Overdrive
+	# (post-main-boss) lifts the cap a few notches for the harder endless run.
+	var cap := roundi(lerp(float(max_hazards_min), float(max_hazards_max), t)) + int(round(_overdrive() * 3.0))
 	if get_tree().get_nodes_in_group("asteroid").size() >= cap:
 		return   # plenty on screen already - let it breathe this beat
 
