@@ -109,8 +109,10 @@ extends Node2D
 @export var frenzy_formation_interval_deep: float = 1.9  # ...and once fully ramped.
 @export var frenzy_charge: float = 1.0         # Charge time for frenzy lasers.
 @export var frenzy_fire: float = 1.1           # Fire time for frenzy lasers.
-@export var reward_time: float = 5.0           # The coin-block victory window after a frenzy.
-@export var reward_breath: float = 1.0         # Calm pause before the bonus block appears.
+@export var reward_time: float = 5.0           # Calm window to fly over the reward chest.
+@export var reward_breath: float = 0.8         # Pause before the chest drops.
+@export var frenzy_reward_coins: int = 60      # Chest coins for completing a Laser Frenzy.
+@export var sweep_reward_coins: int = 80       # Chest coins for a perfect Highway / Coin Rush sweep.
 
 # --- Asteroid Storm (event: a burst of fast meteors from the right) ---
 @export var storm_duration: float = 8.0        # How long a storm lasts.
@@ -173,9 +175,25 @@ extends Node2D
 @export var main_recur_every: int = 4          # After the main boss, every Nth boss slot is the main again.
 @export var boss_bonus_coins: int = 250        # Coin payout for destroying the main boss.
 @export var boss_bonus_mult: float = 0.5       # Run-long score-multiplier bump from the main boss.
-@export var sweep_bonus_coins: int = 50        # Coin payout for a PERFECT Highway / Coin Rush (clean sweep).
 
 const MINI_BOSSES: Array[String] = ["cannon", "frigate", "golem"]
+
+# --- Choice Gate (the post-boss risk/reward fork) ---
+# After ANY boss: a brief decision window with a deadly divider (be ABOVE it for
+# RISK, BELOW for SAFE). The instant you commit, the divider vanishes and the
+# whole screen opens to your chosen path: RISK = ~10s of full-screen CHAOS then a
+# jackpot; SAFE = a calm coin trickle. Reuses the laser/asteroid/coin/powerup scenes.
+@export var choice_divider_y: float = 358.0      # The split line: above = RISK, below = SAFE.
+@export var choice_decide_time: float = 3.0      # Seconds to pick a lane (divider up).
+@export var choice_consequence_time: float = 10.0  # Length of the chosen path (chaos / safe).
+@export var choice_chaos_interval: float = 0.5   # Asteroid (+ orb) gap during the RISK chaos.
+@export var choice_chaos_missile_interval: float = 1.4 # Missile-volley gap during the chaos.
+@export var choice_safe_coin_interval: float = 0.7  # Gap between scattered coin clusters on the SAFE path.
+@export var choice_safe_speed_mult: float = 1.9  # World speeds up on the SAFE path (scramble for coins).
+@export var choice_min_y: float = 90.0           # Full-screen spawn band (screen is open after choosing).
+@export var choice_max_y: float = 560.0
+@export var choice_jackpot_coins: int = 100      # RISK survival reward: coins the chest banks (plus a free shield).
+@export var chest_scene: PackedScene             # the reward chest you fly over after surviving RISK
 
 # --- Progression (milestone-gated unlocks) ---
 # Obstacles/events aren't unlocked by a clock - they're EARNED. A per-run
@@ -198,7 +216,7 @@ const UNLOCK_LEVEL := {
 	"blackout": 7,
 }
 
-enum Phase { BUSY, BREATHER, FRENZY_INTRO, FRENZY, REWARD, STORM, BARRAGE, HIGHWAY, COIN_RUSH, CAVE, BLACKOUT, BOSS }
+enum Phase { BUSY, BREATHER, FRENZY_INTRO, FRENZY, REWARD, STORM, BARRAGE, HIGHWAY, COIN_RUSH, CAVE, BLACKOUT, BOSS, CHOICE }
 
 var _phase: int = Phase.BUSY
 var _phase_time_left: float = 0.0
@@ -215,6 +233,8 @@ var _formation_timer: float = 0.0
 var _last_formation: String = ""        # the previous pattern, so we don't repeat it
 var _reward_block_timer: float = 0.0
 var _reward_block_spawned: bool = false
+var _reward_coins: int = 0             # what the next reward chest is worth
+var _reward_powerup: String = "magnet"
 var _storm_spawn_timer: float = 0.0
 var _barrage_volley_timer: float = 0.0
 var _highway_spawn_timer: float = 0.0
@@ -247,6 +267,15 @@ var _boss_slots_since_main: int = 0     # counts post-main boss slots (for main 
 var _main_defeat_x: float = 0.0         # camera x when the main boss died (drives overdrive)
 var _progress: int = 0                  # milestone counter: rises per event survived / boss beaten
 var _boss_power: float = 0.0            # intensity bump accumulated from mini-boss kills
+var _choice_t: float = 0.0             # time into the Choice Gate phase
+var _choice_decided: bool = false      # has the lane been locked in yet?
+var _choice_risk: bool = false         # chose RISK (above the divider) vs SAFE (below)
+var _choice_divider: Node = null       # the deadly divider beam (removed on commit)
+var _choice_haz_timer: float = 0.0     # next chaos asteroid/orb
+var _choice_missile_timer: float = 0.0 # next chaos missile volley
+var _choice_coin_timer: float = 0.0    # next safe coin row
+var _choice_jackpot_done: bool = false  # the survival reward chest has been dropped
+var _choice_is_main: bool = false       # this Choice Gate follows the MAIN boss (grander chest)
 var _run_time: float = 0.0
 var _start_x: float = 0.0
 var _have_start: bool = false
@@ -413,6 +442,45 @@ func _process(delta: float) -> void:
 		if coin_scene != null and _blackout_coin_timer <= 0.0:
 			_blackout_coin_timer = blackout_coin_interval
 			_spawn_coin_row()
+	elif _phase == Phase.CHOICE:
+		_choice_t += delta
+		if not _choice_decided:
+			# Decision window: countdown, then lock in whichever side the Moki is on.
+			_set_status("CHOOSE  %ds" % ceili(maxf(0.0, choice_decide_time - _choice_t)))
+			if _choice_t >= choice_decide_time:
+				_decide_choice()
+		elif _choice_risk:
+			# RISK: full-screen CHAOS - several hazard streams at once - then jackpot.
+			var since: float = _choice_t - choice_decide_time
+			if since < choice_consequence_time:
+				_set_status("SURVIVE  %ds" % ceili(choice_consequence_time - since))
+				_choice_haz_timer -= delta
+				if _choice_haz_timer <= 0.0:
+					_choice_haz_timer = choice_chaos_interval
+					_spawn_chaos_hazard()   # asteroid + sometimes a bouncing orb
+				_choice_missile_timer -= delta
+				if missile_scene != null and _choice_missile_timer <= 0.0:
+					_choice_missile_timer = choice_chaos_missile_interval
+					_spawn_missile_wave()
+			elif not _choice_jackpot_done:
+				# Survived the full 10s: wipe the chaos for a clean win, then drop the
+				# reward CHEST for the Moki to fly over and claim.
+				_choice_jackpot_done = true
+				_set_status("")
+				_clear_choice_hazards()
+				_spawn_choice_chest()
+				_show_banner("SURVIVED!   GRAB THE CHEST!", Color(1.0, 0.9, 0.4), 3.0)
+		else:
+			# SAFE: a timed scramble - scattered coins rush by; grab what you can.
+			var since: float = _choice_t - choice_decide_time
+			if since < choice_consequence_time:
+				_set_status("GRAB  %ds" % ceili(choice_consequence_time - since))
+				_choice_coin_timer -= delta
+				if coin_scene != null and _choice_coin_timer <= 0.0:
+					_choice_coin_timer = choice_safe_coin_interval
+					_spawn_choice_safe_coins()
+			else:
+				_set_status("")
 
 
 # Move to the next phase. Busy and frenzy both rest into a breather; after a
@@ -425,7 +493,7 @@ func _advance_phase() -> void:
 			_enter_frenzy()    # warning beat over -> formations begin
 		Phase.FRENZY:
 			_event_survived()  # "EVENT CLEARED!" banner like the other events
-			_enter_reward()    # frenzy ends -> coin-shower victory window
+			_enter_reward(frenzy_reward_coins, "magnet")   # drops a reward chest
 		Phase.REWARD:
 			_enter_busy()      # then straight back into the action (fast transition)
 		Phase.STORM:
@@ -447,6 +515,9 @@ func _advance_phase() -> void:
 			_enter_breather()    # ...then a calm beat before normal play
 		Phase.BOSS:
 			boss_failed(_last_boss)  # safety: the boss's own timer should end it first
+		Phase.CHOICE:
+			_set_player_protected(false)  # gauntlet over (survived / safe)
+			_enter_breather()  # the fork is over -> calm, then normal play
 		Phase.BREATHER:
 			# The first event is guaranteed (so it shows up promptly); after that, a
 			# breather leads to an event 'event_chance' of the time (more in overdrive).
@@ -596,9 +667,8 @@ func _spawn_highway_ring() -> void:
 func _finish_highway() -> void:
 	_event_survived()   # progression tick + celebration burst
 	if _highway_spawned > 0 and _highway_perfect:
-		_grant_sweep_bonus()
-		_show_banner("BOOST MASTER!  +%d COINS" % sweep_bonus_coins, Color(0.4, 1.0, 0.8), 2.5)
-		_enter_reward()
+		_show_banner("BOOST MASTER!", Color(0.4, 1.0, 0.8), 2.5)
+		_enter_reward(sweep_reward_coins, "shield")   # drops a reward chest
 	else:
 		_enter_breather()
 
@@ -652,9 +722,8 @@ func _spawn_rush_coin() -> void:
 func _finish_coin_rush() -> void:
 	_event_survived()   # progression tick + celebration burst
 	if _rush_spawned > 0 and _rush_perfect:
-		_grant_sweep_bonus()
-		_show_banner("COIN MASTER!  +%d COINS" % sweep_bonus_coins, Color(1.0, 0.85, 0.3), 2.5)
-		_enter_reward()
+		_show_banner("COIN MASTER!", Color(1.0, 0.85, 0.3), 2.5)
+		_enter_reward(sweep_reward_coins, "shield")   # drops a reward chest
 	else:
 		_enter_breather()
 
@@ -785,7 +854,7 @@ func boss_defeated(kind: String) -> void:
 	# at once - the new hazards just start showing up) and the big celebration blast.
 	_add_progress(boss_progress_bonus)
 	_celebrate(true)
-	_enter_reward()
+	_enter_choice(kind == "main")   # post-boss reward is a risk/reward Choice Gate (grander after the main boss)
 
 
 # Called by a boss if it survives its time cap (or via the safety above): it
@@ -812,17 +881,6 @@ func _grant_main_bonus() -> void:
 			hud.add_coin(boss_bonus_coins)
 		if hud.has_method("add_bonus_multiplier"):
 			hud.add_bonus_multiplier(boss_bonus_mult)
-	var player := get_tree().get_first_node_in_group("player")
-	if player != null and player.has_method("gain_powerup"):
-		player.gain_powerup("shield")
-
-
-# A perfect Highway / Coin Rush (clean sweep) earns a boss-style payoff: a chunk
-# of banked coins + a free shield, on top of the usual reward block.
-func _grant_sweep_bonus() -> void:
-	var hud := get_tree().get_first_node_in_group("hud")
-	if hud != null and hud.has_method("add_coin"):
-		hud.add_coin(sweep_bonus_coins)
 	var player := get_tree().get_first_node_in_group("player")
 	if player != null and player.has_method("gain_powerup"):
 		player.gain_powerup("shield")
@@ -945,14 +1003,150 @@ func _enter_frenzy() -> void:
 
 # A short, calm victory window right after a frenzy: grab a Magnet/Doubler,
 # THEN plough into a big block of coins with it active.
-func _enter_reward() -> void:
-	# Shared coin-block reward (used by both the frenzy and a perfect highway).
-	# The caller shows its own banner first.
+func _enter_reward(coins: int, powerup_type: String) -> void:
+	# Shared reward window: a calm beat, then a CHEST drops for the Moki to fly
+	# over. The caller shows its own banner first.
 	_phase = Phase.REWARD
 	_phase_time_left = reward_time
-	_reward_block_timer = reward_breath   # short pause before the bonus drops
+	_reward_block_timer = reward_breath   # short pause before the chest drops
 	_reward_block_spawned = false
+	_reward_coins = coins
+	_reward_powerup = powerup_type
 	_set_status("")   # hide the status line
+
+
+# The post-boss Choice Gate: a brief decision window split by a deadly divider
+# (be ABOVE it for RISK, BELOW for SAFE), then the screen opens to your path.
+func _enter_choice(is_main: bool = false) -> void:
+	_phase = Phase.CHOICE
+	_choice_is_main = is_main
+	# Master timer: decide + the chosen path + a tail (to fly over the reward chest).
+	_phase_time_left = choice_decide_time + choice_consequence_time + 4.0
+	_choice_t = 0.0
+	_choice_decided = false
+	_choice_risk = false
+	_choice_jackpot_done = false
+	_choice_haz_timer = 0.0
+	_choice_coin_timer = 0.3
+	_set_status("")
+	# The divider: a faint, NON-deadly guide line marking the split. You can cross
+	# it freely the whole decision window; we just read your side (and remove the
+	# line) the moment you commit. We keep it "charging" forever (charge_time longer
+	# than the window) so it never actually fires.
+	if horizontal_laser_scene != null:
+		var d := horizontal_laser_scene.instantiate()
+		d.beam_y = choice_divider_y
+		d.beam_thickness = 50.0
+		d.charge_time = choice_decide_time + 1.0   # never reaches "fire" before we free it
+		d.fire_time = 1.0
+		_choice_divider = d
+		add_child(d)
+	_show_banner("CHOOSE!   ^ UP = RISK   v DOWN = SAFE", Color(1.0, 0.8, 0.3), choice_decide_time + 0.4)
+
+
+# Lock in the lane: open the screen back up and read which side the Moki picked.
+func _decide_choice() -> void:
+	_choice_decided = true
+	if is_instance_valid(_choice_divider):
+		_choice_divider.queue_free()   # the whole screen opens again
+	_choice_divider = null
+	var player := get_tree().get_first_node_in_group("player")
+	_choice_risk = player != null and player.global_position.y < choice_divider_y
+	if _choice_risk:
+		_choice_haz_timer = 0.0
+		_choice_missile_timer = 0.5
+		_set_player_protected(true)   # a hit now FAILS the event, not the run
+		_show_banner(">>  RISK!  SURVIVE THE CHAOS  <<", Color(1.0, 0.4, 0.3), 2.0)
+	else:
+		# Safe, but not boring: speed the world up so the coins rush by and you have
+		# to scramble to scoop them.
+		if camera != null and camera.has_method("add_boost"):
+			camera.add_boost(choice_consequence_time + 4.0, choice_safe_speed_mult)
+		_show_banner("SAFE  -  scramble for coins!", Color(0.5, 1.0, 0.7, 1.0), 2.0)
+
+
+# Called by the player when it takes a hit during the RISK gauntlet: the risky
+# event ends in failure (no jackpot), but the RUN continues.
+func choice_failed() -> void:
+	if _phase != Phase.CHOICE:
+		return
+	_set_player_protected(false)
+	_set_status("")
+	_show_banner("RISK FAILED!   NO REWARD", Color(1.0, 0.4, 0.3), 2.5)
+	_enter_breather()
+
+
+func _set_player_protected(v: bool) -> void:
+	var p := get_tree().get_first_node_in_group("player")
+	if p != null:
+		p.protected = v
+
+
+# One chaos beat: a fast (often drifting) asteroid PLUS, much of the time, a
+# bouncing orb - which together with the missile volleys keeps the screen alive
+# with several kinds of hazard at once.
+func _spawn_chaos_hazard() -> void:
+	if obstacle_scene != null:
+		var a := obstacle_scene.instantiate()
+		a.position = Vector2(camera.global_position.x + spawn_ahead, randf_range(choice_min_y, choice_max_y))
+		a.extra_speed = 160.0 + 160.0 * _difficulty()   # fast = chaotic
+		if randf() < 0.4:
+			a.drift_amplitude = randf_range(40.0, 90.0)
+			a.drift_speed = randf_range(1.5, 3.0)
+		add_child(a)
+
+	# Often a second simultaneous threat: a bouncing orb.
+	if orb_scene != null and randf() < 0.5:
+		var o := orb_scene.instantiate()
+		o.position = Vector2(camera.global_position.x + spawn_ahead + 60.0, randf_range(choice_min_y, choice_max_y))
+		o.vy = randf_range(290.0, 380.0)
+		if randf() < 0.5:
+			o.vy = -o.vy
+		o.vx = -randf_range(120.0, 180.0)
+		add_child(o)
+
+
+# The RISK survival reward: a chest the Moki flies over to bank the coins + a
+# shield (chest.gd grants it on pickup). Spawned centre-screen so it scrolls
+# right through where the survivor is.
+func _spawn_choice_chest() -> void:
+	if chest_scene == null:
+		return
+	var ch := chest_scene.instantiate()
+	if _choice_is_main:
+		# The main boss earns a GRAND chest: double coins, a Ghost, and a run-long
+		# score-multiplier bump.
+		ch.coins = choice_jackpot_coins * 2
+		ch.powerup_type = "ghost"
+		ch.bonus_mult = 0.25
+		ch.big = true
+	else:
+		ch.coins = choice_jackpot_coins
+		ch.powerup_type = "shield"
+	ch.position = Vector2(camera.global_position.x + 800.0, 360.0)
+	add_child(ch)
+
+
+# Wipe the chaos off the screen (asteroids/orbs + missiles) so a survived RISK
+# win is clean and nothing can clip you during the reward beat.
+func _clear_choice_hazards() -> void:
+	for n in get_tree().get_nodes_in_group("asteroid"):
+		n.queue_free()
+	for m in get_tree().get_nodes_in_group("missile"):
+		m.queue_free()
+
+
+# A scattered cluster of safe coins (varied x AND y), so on the fast SAFE path you
+# have to scramble around to gather them all.
+func _spawn_choice_safe_coins() -> void:
+	if coin_scene == null:
+		return
+	var base_x := camera.global_position.x + spawn_ahead
+	var n := randi_range(2, 4)
+	for i in n:
+		var c := coin_scene.instantiate()
+		c.position = Vector2(base_x + randf_range(0.0, 240.0), randf_range(choice_min_y, choice_max_y))
+		add_child(c)
 
 
 # Ask the HUD to flash a banner message in the given colour for 'time' seconds.
@@ -1266,32 +1460,16 @@ func _spawn_horizontal_formation() -> void:
 		add_child(laser)
 
 
-# The frenzy reward: a Magnet or Doubler out front, then a 10x10 coin block
-# right behind it - so you scoop the powerup first and shred the block with it.
-@export var reward_coin_cols: int = 10
-@export var reward_coin_rows: int = 10
-@export var reward_coin_spacing: float = 50.0
-
+# The event reward: a CHEST the Moki flies over to bank coins + grab a powerup
+# (contents set by the caller via _enter_reward). Spawned centre-screen.
 func _spawn_reward_block() -> void:
-	var front_x := camera.global_position.x + 700.0
-
-	# The powerup, centred and IN FRONT (smaller x = reached first). Always a
-	# Magnet, so you reliably vacuum up the coin block right behind it.
-	if powerup_scene != null:
-		var p := powerup_scene.instantiate()
-		p.type = "magnet"
-		p.position = Vector2(front_x, 330.0)
-		add_child(p)
-
-	# The coin block, just behind the powerup.
-	if coin_scene != null:
-		var grid_x := front_x + 200.0
-		var top_y := 90.0
-		for r in reward_coin_rows:
-			for c in reward_coin_cols:
-				var coin := coin_scene.instantiate()
-				coin.position = Vector2(grid_x + c * reward_coin_spacing, top_y + r * reward_coin_spacing)
-				add_child(coin)
+	if chest_scene == null:
+		return
+	var ch := chest_scene.instantiate()
+	ch.coins = _reward_coins
+	ch.powerup_type = _reward_powerup
+	ch.position = Vector2(camera.global_position.x + 760.0, 360.0)
+	add_child(ch)
 
 
 func _spawn_coin_row() -> void:

@@ -70,8 +70,9 @@ Main (Node2D)
 | Scene / Script | Pickup |
 |---|---|
 | `Coin.tscn` / `coin.gd` | Coin — banks currency + builds the end-of-run multiplier |
-| `Powerup.tscn` / `powerup.gd` | One scene, `type` picks the effect: shield / magnet / doubler / ghost |
+| `Powerup.tscn` / `powerup.gd` | One scene, `type` picks the effect: shield / magnet / doubler / ghost / dash / tiny / secondchance |
 | `BoostRing.tscn` / `ring.gd` | Fly through for a speed boost |
+| `Chest.tscn` / `chest.gd` | Reward chest — fly over it to bank coins + a powerup (every reward drops one) |
 
 ---
 
@@ -185,8 +186,25 @@ Clearing an event or beating a boss fires `_celebrate(big)`: a **speed boost** (
 gear), a **screen shake** (`camera.shake()`), **symmetric fireworks** (`Fireworks.tscn`,
 popped on the HUD — one from each side for an event; both sides + middle for a boss), and a
 banner ("EVENT CLEARED!"; bosses add a gold `hud.flash()`). Coin Rush also speeds the whole
-world up (`coinrush_speed_mult`) for a real challenge, and the reward block always drops a
-**Magnet** so you can vacuum the coins behind it.
+world up (`coinrush_speed_mult`) for a real challenge.
+
+### Rewards & the Choice Gate
+Every reward is now a **chest** (`Chest.tscn`/`chest.gd`) you fly over to claim — it banks
+`coins`, grants a `powerup_type`, and (for the grand one) a run-long `bonus_mult`. A chest
+drops after a **Laser Frenzy**, a perfect **Highway/Coin Rush** sweep (`_enter_reward(coins,
+powerup)` → the REWARD window), and the Choice Gate.
+
+The **Choice Gate** *replaces* the post-boss reward (`boss_defeated()` → `_enter_choice()`,
+`Phase.CHOICE`):
+- **Decide (~3s):** a faint, non-deadly divider line splits the screen — fly **above** for
+  RISK, **below** for SAFE; your side locks in when the timer ends and the line vanishes.
+- **RISK:** ~10s of full-screen chaos (asteroids + orbs + missiles). A hit **fails the event**
+  (`player.protected` → `choice_failed()`, no reward) but does **not** end the run (a Shield /
+  Second Chance still absorbs it and you keep going). Survive untouched → the screen clears and
+  a reward **chest** drops to fly over.
+- **SAFE:** the world speeds up and scattered coins rush by — scramble to grab them, no danger.
+- The **DREADNOUGHT** flags `_choice_is_main`, so its survival chest is a **GRAND chest**
+  (double coins + a Ghost + a score-multiplier bump) — bigger and gold/purple.
 
 ---
 

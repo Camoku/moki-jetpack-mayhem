@@ -80,8 +80,14 @@ real playtesting in places (noted per item).
       via `_surge()`). Run starts on basics, opens up as you clear challenges. Per-run.
 - [x] **Celebration / juice** — clearing an event (small) or beating a boss (big) fires a
       burst: speed boost (camera) + screen shake + symmetric **fireworks** (`Fireworks.tscn`)
-      + an "EVENT CLEARED!" banner (boss adds a gold screen-flash). Coin Rush speeds the world
-      up + wavier path for real challenge; reward block always drops a Magnet.
+      + an "EVENT CLEARED!" banner (boss adds a gold screen-flash).
+- [x] **Reward chests** — all rewards are now a **chest** (`Chest.tscn`/`chest.gd`) you fly
+      over to claim (coins + a powerup): after a Frenzy, a perfect Highway/Coin Rush sweep,
+      and the Choice Gate.
+- [x] **Choice Gate** (post-boss) — a 3s split-screen decision (`Phase.CHOICE`): **RISK**
+      (above) = ~10s of full-screen chaos; a hit *fails the event* (no reward) but doesn't end
+      the run — survive → a chest. **SAFE** (below) = a sped-up scramble for scattered coins.
+      The **DREADNOUGHT** drops a **GRAND chest** (double coins + Ghost + run-long mult).
 
 ### 🔜 To build (roughly in priority order)
 - [ ] **Upgrade Store** *(next — the big one)*. End-of-run shop to spend banked coins on

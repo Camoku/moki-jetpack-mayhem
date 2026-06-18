@@ -29,6 +29,7 @@ var camera: Node2D
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
+	add_to_group("missile")   # so the Choice Gate can clear us when a RISK run is survived
 	missile_body.visible = false
 	tip.visible = false
 	warn_bg.visible = true

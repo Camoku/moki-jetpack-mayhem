@@ -22,7 +22,7 @@
 ;    the Moki between roof and floor so it never leaves the screen.
 ; ==========================================================
 
-[gd_scene load_steps=26 format=3]
+[gd_scene load_steps=27 format=3]
 
 [ext_resource type="Script" path="res://player.gd" id="1_player"]
 [ext_resource type="Script" path="res://darkness.gd" id="15_darkness"]
@@ -31,6 +31,7 @@
 [ext_resource type="PackedScene" path="res://Crusher.tscn" id="18_crusher"]
 [ext_resource type="PackedScene" path="res://Drone.tscn" id="19_drone"]
 [ext_resource type="PackedScene" path="res://Fireworks.tscn" id="20_fireworks"]
+[ext_resource type="PackedScene" path="res://Chest.tscn" id="21_chest"]
 [ext_resource type="Script" path="res://background.gd" id="2_bg"]
 [ext_resource type="PackedScene" path="res://Obstacle.tscn" id="3_obstacle"]
 [ext_resource type="Script" path="res://spawner.gd" id="4_spawner"]
@@ -402,6 +403,7 @@ orb_scene = ExtResource("17_orb")
 crusher_scene = ExtResource("18_crusher")
 drone_scene = ExtResource("19_drone")
 fireworks_scene = ExtResource("20_fireworks")
+chest_scene = ExtResource("21_chest")
 
 ; ---------------- HUD (score + game over) ----------------
 ; A CanvasLayer draws in screen space (stays put as the world scrolls).

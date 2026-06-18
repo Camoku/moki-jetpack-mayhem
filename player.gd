@@ -82,6 +82,10 @@ var invuln: float = 0.0   # seconds of post-shield invincibility remaining
 # A held Second Chance revive token.
 var _has_second_chance: bool = false
 
+# Set by the spawner during the Choice-Gate RISK gauntlet: a hit here FAILS the
+# event (the spawner ends it, no reward) instead of ending the whole run.
+var protected: bool = false
+
 # Timed powerups: a name -> seconds-remaining table. A powerup is active
 # while its entry exists; when its time hits zero we remove it.
 var timers: Dictionary = {}
@@ -292,6 +296,15 @@ func crash() -> void:
 				hud_sc.show_banner("SECOND CHANCE!", Color(1.0, 0.5, 0.7, 1.0), 2.0)
 			if hud_sc.has_method("flash"):
 				hud_sc.flash(Color(1.0, 0.5, 0.7, 0.45))
+		return
+
+	# In the Choice-Gate RISK gauntlet: a hit FAILS that event (no reward), but the
+	# RUN continues. i-frames first so co-incident hits this frame are ignored too.
+	if protected:
+		invuln = maxf(invuln, 2.0)
+		var sp := get_tree().get_first_node_in_group("spawner")
+		if sp != null and sp.has_method("choice_failed"):
+			sp.choice_failed()
 		return
 
 	# No shield - this is a real crash.
