@@ -60,6 +60,9 @@ Main (Node2D)
 | `BeamObstacle.tscn` / `beam_obstacle.gd` | Floating capped laser bar (H or V) |
 | `Missile.tscn` / `missile.gd` | Warns ("!") at the right edge, then strikes left |
 | `CaveWall.tscn` / `cave_wall.gd` | One tunnel slice (top+bottom walls + gap) for the Cave event |
+| `BounceOrb.tscn` / `bounce_orb.gd` | Ball that drifts left while bouncing roof↔floor (a zig-zag) |
+| `Crusher.tscn` / `crusher.gd` | A gate whose two blocks slam open/shut on a cycle — time the gap |
+| `Drone.tscn` / `drone.gd` | Small enemy that slowly homes your height, then commits once it passes |
 | `Boss.tscn` / `boss.gd` | Every boss (one scene, `kind` picks which); reuses the hazards as its attacks |
 
 ### Pickups
@@ -165,6 +168,11 @@ Key knobs: `boss_every`, `boss_min_time`, `main_recur_every`, `boss_bonus_coins`
   screen never becomes soup. Lasers/events bypass it.
 - **Clearance**: pickups never spawn on hazards — `_overlaps()` uses each object's
   `clear_radius()` so even long beams/cave walls keep their whole length clear.
+- **Extra obstacles**: bouncing orbs and homing drones mix into the normal hazard pick
+  (`_spawn_something`, unlocked by `orb_min_time`/`drone_min_time`, so they share the cap).
+  **Crusher gates** run on their own timer and get a **clear lane**: while one is passing,
+  other hazards/missiles pause (`_crusher_clear`) and no second gate spawns, so you can
+  hover and time the gap fairly.
 
 ---
 

@@ -35,6 +35,19 @@ extends Node2D
 
 # Of the non-laser hazards, how often we drop a beam gate instead of an asteroid.
 @export var beam_chance: float = 0.3
+
+# --- Extra obstacles (mixed into normal play once unlocked) ---
+@export var orb_scene: PackedScene             # bouncing orb
+@export var crusher_scene: PackedScene          # slamming gate
+@export var drone_scene: PackedScene            # homing drone
+@export var orb_min_time: float = 10.0          # No bouncing orbs until this many seconds in.
+@export var orb_chance: float = 0.25            # Chance a non-beam hazard is an orb (once unlocked).
+@export var drone_min_time: float = 15.0        # No drones until this many seconds in.
+@export var drone_chance: float = 0.25          # Chance a non-beam/orb hazard is a drone (once unlocked).
+@export var crusher_min_time: float = 20.0      # No crusher gates until this many seconds in.
+@export var crusher_interval_min: float = 7.0   # Crusher gates arrive on their own slow timer...
+@export var crusher_interval_max: float = 13.0  # ...somewhere in this range (one at a time).
+@export var crusher_clear_window: float = 4.5   # Seconds of "no other hazards" while a gate passes.
 # Boost rings appear on their own slow, random timer (only in normal play).
 @export var ring_interval_min: float = 6.0
 @export var ring_interval_max: float = 11.0
@@ -178,6 +191,8 @@ var _time_since_coins: float = 0.0
 var _time_to_powerup: float = 0.0
 var _time_to_ring: float = 0.0
 var _time_to_missile: float = 0.0
+var _time_to_crusher: float = 0.0
+var _crusher_clear: float = 0.0    # >0 while a crusher gate is passing (pauses other hazards)
 var _formation_timer: float = 0.0
 var _last_formation: String = ""        # the previous pattern, so we don't repeat it
 var _reward_block_timer: float = 0.0
@@ -231,6 +246,7 @@ func _ready() -> void:
 	_time_to_powerup = randf_range(powerup_interval_min, powerup_interval_max)
 	_time_to_ring = randf_range(ring_interval_min, ring_interval_max)
 	_time_to_missile = missile_interval_early
+	_time_to_crusher = randf_range(crusher_interval_min, crusher_interval_max)
 
 
 func _process(delta: float) -> void:
@@ -274,19 +290,34 @@ func _process(delta: float) -> void:
 
 	# Each phase does its own thing.
 	if _phase == Phase.BUSY:
-		_time_since_spawn += delta
-		if _time_since_spawn >= _next_interval:
-			_time_since_spawn = 0.0
-			_spawn_something()
-			_roll_next_interval()
+		if _crusher_clear > 0.0:
+			_crusher_clear -= delta
 
-		# Missiles fire from the right on their own timer (after a warm-up).
-		if missile_scene != null and _run_time >= missile_min_time:
-			_time_to_missile -= delta
-			if _time_to_missile <= 0.0:
-				# Shorter gaps the deeper you are (and tighter still in overdrive), with jitter.
-				_time_to_missile = lerp(missile_interval_early, missile_interval_deep, _difficulty()) * lerp(1.0, 0.65, _overdrive()) * randf_range(0.85, 1.15)
-				_spawn_missile_wave()
+		# Normal hazards + missiles PAUSE while a crusher gate is on its way
+		# through, so the gate gets a clear lane to time (no lasers/missiles
+		# parked in front of it - the gate IS the challenge for that beat).
+		if _crusher_clear <= 0.0:
+			_time_since_spawn += delta
+			if _time_since_spawn >= _next_interval:
+				_time_since_spawn = 0.0
+				_spawn_something()
+				_roll_next_interval()
+
+			# Missiles fire from the right on their own timer (after a warm-up).
+			if missile_scene != null and _run_time >= missile_min_time:
+				_time_to_missile -= delta
+				if _time_to_missile <= 0.0:
+					# Shorter gaps the deeper you are (and tighter still in overdrive), with jitter.
+					_time_to_missile = lerp(missile_interval_early, missile_interval_deep, _difficulty()) * lerp(1.0, 0.65, _overdrive()) * randf_range(0.85, 1.15)
+					_spawn_missile_wave()
+
+		# Crusher gates arrive on their own slow timer - but only when the lane
+		# is currently clear, so two never stack up.
+		if crusher_scene != null and _run_time >= crusher_min_time and _crusher_clear <= 0.0:
+			_time_to_crusher -= delta
+			if _time_to_crusher <= 0.0:
+				_time_to_crusher = randf_range(crusher_interval_min, crusher_interval_max) * lerp(1.0, 0.7, _overdrive())
+				_spawn_crusher()
 	elif _phase == Phase.FRENZY:
 		# Show how long is left to survive, and emit laser formations.
 		_set_status("SURVIVE  %ds" % ceili(_phase_time_left))
@@ -848,8 +879,14 @@ func _spawn_something() -> void:
 	if get_tree().get_nodes_in_group("asteroid").size() >= cap:
 		return   # plenty on screen already - let it breathe this beat
 
+	# Pick which persistent hazard to drop. Beams first, then the unlockable
+	# orb / drone, otherwise a plain asteroid. (All count toward the cap above.)
 	if beam_obstacle_scene != null and randf() < beam_chance:
 		_spawn_beam()
+	elif orb_scene != null and _run_time >= orb_min_time and randf() < orb_chance:
+		_spawn_orb()
+	elif drone_scene != null and _run_time >= drone_min_time and randf() < drone_chance:
+		_spawn_drone()
 	else:
 		_spawn_asteroid(t)
 
@@ -875,6 +912,53 @@ func _spawn_asteroid(difficulty: float) -> void:
 		asteroid.drift_speed = randf_range(1.5, 3.0)
 
 	add_child(asteroid)
+
+
+# A bouncing orb at a clear height, with a difficulty-scaled bounce speed and a
+# random starting direction.
+func _spawn_orb() -> void:
+	if orb_scene == null:
+		return
+	var orb := orb_scene.instantiate()
+	var spawn_x := camera.global_position.x + spawn_ahead
+	var y := randf_range(140.0, 520.0)
+	var tries := 0
+	while _overlaps(Vector2(spawn_x, y), 26.0, ["coin", "powerup", "ring"]) and tries < 8:
+		y = randf_range(140.0, 520.0)
+		tries += 1
+	orb.position = Vector2(spawn_x, y)
+	orb.vy = randf_range(290.0, 380.0) * (1.0 + 0.4 * _difficulty())
+	if randf() < 0.5:
+		orb.vy = -orb.vy   # start heading up instead of down
+	orb.vx = -randf_range(110.0, 170.0)   # leftward drift -> diagonal zig-zag
+	add_child(orb)
+
+
+# A homing drone; it tracks the Moki's height, so it just needs a clear spawn.
+func _spawn_drone() -> void:
+	if drone_scene == null:
+		return
+	var drone := drone_scene.instantiate()
+	var spawn_x := camera.global_position.x + spawn_ahead
+	var y := randf_range(140.0, 520.0)
+	var tries := 0
+	while _overlaps(Vector2(spawn_x, y), 26.0, ["coin", "powerup", "ring"]) and tries < 8:
+		y = randf_range(140.0, 520.0)
+		tries += 1
+	drone.position = Vector2(spawn_x, y)
+	drone.home_speed = lerp(190.0, 300.0, _difficulty())   # tracks faster deep in a run
+	add_child(drone)
+
+
+# A slamming crusher gate, with its safe gap at a random height.
+func _spawn_crusher() -> void:
+	if crusher_scene == null:
+		return
+	var c := crusher_scene.instantiate()
+	c.position = Vector2(camera.global_position.x + spawn_ahead, 0.0)
+	c.gap_center = randf_range(250.0, 410.0)
+	add_child(c)
+	_crusher_clear = crusher_clear_window   # give the gate a clear lane to time
 
 
 # A floating capped laser bar, horizontal or vertical, at a clear height.

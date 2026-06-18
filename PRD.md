@@ -34,7 +34,7 @@ reward beats so it's not pure stress.
 
 ## 3. Current status (2026-06-18)
 
-Core loop, movement, scoring, save system, 5 hazard types, 4 powerups, coins, a
+Core loop, movement, scoring, save system, 8 hazard types, 4 powerups, coins, a
 7-event rotation, and a full **boss progression** (3 mini-bosses → a main boss → endless
 overdrive) are **built and compile-clean**. Biggest gap: **no upgrade store yet**
 (coins bank but can't be spent), and no audio/juice/real art. Balance is unverified by
@@ -52,7 +52,8 @@ real playtesting in places (noted per item).
 - [x] **Scoring** — live Distance (m); end-of-run Score = distance × mult; tiered coin multiplier
 - [x] **Persistence** — `GameState` autoload saves high_score / best_distance / coins to disk
 - [x] **HUD** — distance, multiplier, coins, best, status line, banners, game-over panel
-- [x] **Hazards** — asteroids (+drift), vertical laser, horizontal laser, beam gates, missiles
+- [x] **Hazards** — asteroids (+drift), vertical laser, horizontal laser, beam gates, missiles,
+      **bouncing orbs** (zig-zag), **crusher gates** (timing; clear lane while passing), **homing drones**
 - [x] **Pickups** — coins (bank + multiplier)
 - [x] **Powerups** — Shield, Ghost, Magnet, Doubler (timed system, 5s each)
 - [x] **Pacing** — wave system (busy/breather), difficulty ramp, scaling hazard cap

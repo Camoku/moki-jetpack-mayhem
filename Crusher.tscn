@@ -1,0 +1,30 @@
+; ==========================================================
+;  Crusher.tscn - a gate whose two blocks slam open and shut
+; ==========================================================
+;  The block sizes/positions are all set in code (crusher.gd) from its
+;  @export cycle settings, so this scene is just the empty nodes.
+;
+;  Tree:
+;    Crusher (Area2D)         <- detector, runs crusher.gd
+;    +-- TopShape    (CollisionShape2D)  <- ceiling block hit box
+;    +-- BottomShape (CollisionShape2D)  <- floor block hit box
+;    +-- TopWall     (ColorRect)         <- ceiling block visual
+;    +-- BottomWall  (ColorRect)         <- floor block visual
+; ==========================================================
+
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://crusher.gd" id="1_crush"]
+
+[node name="Crusher" type="Area2D"]
+script = ExtResource("1_crush")
+
+[node name="TopShape" type="CollisionShape2D" parent="."]
+
+[node name="BottomShape" type="CollisionShape2D" parent="."]
+
+[node name="TopWall" type="ColorRect" parent="."]
+color = Color(0.5, 0.5, 0.58, 1)
+
+[node name="BottomWall" type="ColorRect" parent="."]
+color = Color(0.5, 0.5, 0.58, 1)
