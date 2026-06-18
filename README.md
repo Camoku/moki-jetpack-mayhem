@@ -47,8 +47,9 @@ Main (Node2D)
 | `camera.gd` | Constant world scroll + a temporary **boost gear** (`current_speed()`) |
 | `spawner.gd` | Wave/event director: spawns hazards, pickups, and runs all events |
 | `hud.gd` | Distance/coins/multiplier, status line, banners, game-over screen |
-| `game_state.gd` | **Autoload** — saves high_score / best_distance / coins to `user://save.cfg` |
+| `game_state.gd` | **Autoload** — saves high_score / best_distance / coins; also holds runtime `blackout` (0→1) |
 | `background.gd` | Slowly tints the space color with distance |
+| `darkness.gd` | On a `CanvasModulate` — dims the world by `GameState.blackout` (the Blackout event) |
 
 ### Hazards
 | Scene / Script | Hazard |
@@ -97,9 +98,32 @@ and (for survival events) a `SURVIVE Ns` countdown.
 | **Boost Highway** | reward | Chain of strong boost rings on a sine path. Hit all → "BOOST MASTER!" |
 | **Coin Rush** | reward | Stream of coins on a sine path. Grab all → "COIN MASTER!" |
 | **Narrow Cave** | environment | Thread a winding tunnel of wall slices. 8s. |
+| **Blackout** | environment | Lights out + **fog of war**: coins/hazards only glow when near the Moki. Survive 7s. |
 
 A perfect Highway/Coin Rush, or a cleared Frenzy, drops the shared **reward** (a
 powerup + a 10×10 coin block) via `_enter_reward()`.
+
+### How the Blackout lighting works (the 2D-lighting trick)
+Godot's 2D lighting has two halves, and Blackout uses both:
+- A **`CanvasModulate`** (the `Darkness` nodes) multiplies the whole world's colour.
+  At white it does nothing; we tween it toward near-black to "turn off the lights."
+  It does **not** touch the HUD (separate `CanvasLayer`) or 2D lights.
+- A **`PointLight2D`** (a "Glow") on each coin, asteroid, and the Moki is *added back*
+  on top of the darkness — so in the dark, those glows are the only thing you see.
+
+**Fog of war (the difficulty knob):** a coin/asteroid glow doesn't just switch on in
+the dark — its brightness also fades with **distance to the Moki** (`_vision()` in
+`coin.gd` / `obstacle.gd`: `1.0` within `VISION_NEAR`, ramping to `0.0` by `VISION_FAR`).
+So far-off things stay hidden and only loom into view as they approach — it's a reaction
+test, not a read-the-whole-board test. Hazards use a *larger* radius than coins so
+dodging stays fair; shrink these consts to make it harder.
+
+One shared number, **`GameState.blackout`** (0 = lights on, 1 = full dark), drives it
+all: `darkness.gd` reads it for the dim; each glow reads it for its brightness. The
+spawner tweens it 0→1 on `_enter_blackout()` and 1→0 when the event ends, and resets it
+to 0 in `_ready()` (it's an autoload value, so it must be cleared each run). Note:
+`ParallaxBackground` is its own `CanvasLayer`, so it needs its **own** `CanvasModulate`
+(there are two `Darkness` nodes — one for the world, one for the background).
 
 ---
 
@@ -128,5 +152,5 @@ Stores `high_score`, `best_distance`, `coins`. Delete it to reset progress.
 
 ## Ideas not yet built
 - **Upgrade store** — spend banked coins on permanent boosts (the big next feature).
-- More events: **Laser Cannon mini-boss**, **Blackout**.
+- More events: **Laser Cannon mini-boss**, **Wind Gusts**, **Reverse-gravity zone**.
 - Sound/juice (screen shake, particles), real Moki art.

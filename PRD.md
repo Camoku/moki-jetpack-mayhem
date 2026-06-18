@@ -35,7 +35,7 @@ reward beats so it's not pure stress.
 ## 3. Current status (2026-06-18)
 
 Core loop, movement, scoring, save system, 5 hazard types, 4 powerups, coins, and a
-6-event rotation are **built and compile-clean**. Biggest gap: **no upgrade store yet**
+7-event rotation are **built and compile-clean**. Biggest gap: **no upgrade store yet**
 (coins bank but can't be spent), and no audio/juice/real art. Balance is unverified by
 real playtesting in places (noted per item).
 
@@ -56,8 +56,10 @@ real playtesting in places (noted per item).
 - [x] **Powerups** — Shield, Ghost, Magnet, Doubler (timed system, 5s each)
 - [x] **Pacing** — wave system (busy/breather), difficulty ramp, scaling hazard cap
 - [x] **Spawn clearance** — pickups never overlap hazards (radius-based)
-- [x] **Events (6):** Laser Frenzy, Asteroid Storm, Missile Barrage, Boost Highway,
-      Coin Rush, Narrow Cave — fair weighted rotation, no repeats, clean-sweep rewards
+- [x] **Events (7):** Laser Frenzy, Asteroid Storm, Missile Barrage, Boost Highway,
+      Coin Rush, Narrow Cave, **Blackout** — fair weighted rotation, no repeats, clean-sweep rewards
+- [x] **2D lighting** — `CanvasModulate` darkness + per-object `PointLight2D` glows
+      (coins/asteroids/Moki), driven by `GameState.blackout` (for the Blackout event)
 
 ### 🔜 To build (roughly in priority order)
 - [ ] **Upgrade Store** *(next — the big one)*. End-of-run shop to spend banked coins on
@@ -74,8 +76,8 @@ real playtesting in places (noted per item).
 - [ ] **Disk-persist owned upgrades** (part of store, but call it out)
 
 ### 🅿️ Parking lot (ideas, not committed)
-- More events: **Laser Cannon mini-boss** (telegraphed sweeping beams), **Blackout**
-  (lights dim, only warnings glow), **Wind Gusts**, **Reverse-gravity zone**
+- More events: **Laser Cannon mini-boss** (telegraphed sweeping beams),
+  **Wind Gusts**, **Reverse-gravity zone**
 - Daily challenge / seed runs
 - Cosmetic Moki skins (bought with coins)
 - Combo/streak scoring; near-miss bonus

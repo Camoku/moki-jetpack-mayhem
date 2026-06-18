@@ -59,6 +59,12 @@ extends CharacterBody2D
 # The shield "bubble" visual, shown only while a shield is active.
 @onready var shield_visual: ColorRect = $Shield
 
+# A faint self-glow so the Moki is just visible during a Blackout event.
+# Kept dim on purpose (full dark is the whole point). GLOW_MAX = brightness
+# at full blackout.
+@onready var glow: PointLight2D = $Glow
+const GLOW_MAX := 1.1
+
 # Becomes true the moment we crash, so we only crash once.
 var dead: bool = false
 
@@ -96,6 +102,9 @@ func _physics_process(delta: float) -> void:
 	# Tick down timed powerups (magnet/doubler/ghost), the shield's i-frames,
 	# and update how the Moki looks.
 	_update_powerups(delta)
+
+	# Light ourselves faintly only when the world goes dark (Blackout event).
+	glow.energy = GameState.blackout * GLOW_MAX
 
 	# 1) GRAVITY -------------------------------------------------
 	# Add a little downward speed every step. (In 2D, +Y is DOWN.)

@@ -14,6 +14,13 @@ var high_score: int = 0
 var best_distance: int = 0   # furthest distance (metres) ever reached
 var coins: int = 0       # banked currency, to spend in the store later
 
+# How "dark" the world is right now: 0.0 = normal daylight, 1.0 = full
+# blackout. The spawner tweens this up/down during the Blackout event; the
+# CanvasModulate dims the world by it, and every coin/asteroid/player glow
+# brightens by it. It is RUNTIME-ONLY (never saved to disk). It lives here
+# because it is a single value that lots of unrelated nodes need to read.
+var blackout: float = 0.0
+
 # Where the save file lives. "user://" is a safe per-user folder Godot
 # manages for us (no need to worry about the real path on disk).
 const SAVE_PATH := "user://save.cfg"

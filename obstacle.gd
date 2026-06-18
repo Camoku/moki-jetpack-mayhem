@@ -26,6 +26,16 @@ var camera: Node2D   # the world scroller; we delete once we are behind it.
 var _base_y: float = 0.0   # the height we drift around.
 var _time: float = 0.0
 
+# Our danger glow for the Blackout event. How bright it gets at full dark.
+const GLOW_MAX := 1.8
+# Fog of war: a hazard only glows when near the Moki. Fully bright within
+# VISION_NEAR px, fading to nothing by VISION_FAR px. Hazards reveal a touch
+# EARLIER than coins (bigger radius) so dodging stays fair, not cheap.
+const VISION_NEAR := 180.0
+const VISION_FAR := 380.0
+@onready var glow: PointLight2D = $Glow
+var player: Node2D
+
 
 func _ready() -> void:
 	# body_entered fires whenever a physics body (our Moki) enters us.
@@ -44,7 +54,22 @@ func clear_radius() -> float:
 	return 34.0
 
 
+# Fog of war: how visible we are based on distance to the Moki.
+# 1.0 when within VISION_NEAR, ramping down to 0.0 by VISION_FAR.
+func _vision() -> float:
+	if player == null:
+		player = get_tree().get_first_node_in_group("player")
+	if player == null:
+		return 1.0   # no Moki yet - don't hide things
+	var d := global_position.distance_to(player.global_position)
+	return clamp(1.0 - (d - VISION_NEAR) / (VISION_FAR - VISION_NEAR), 0.0, 1.0)
+
+
 func _process(delta: float) -> void:
+	# Glow only in the dark (GameState.blackout), and only the FOG-OF-WAR way:
+	# ominous red when the Moki is close, invisible when far. _vision() = 1 near, 0 far.
+	glow.energy = GameState.blackout * GLOW_MAX * _vision()
+
 	# Storm meteors rush left under their own steam (on top of the scroll).
 	if extra_speed != 0.0:
 		position.x -= extra_speed * delta

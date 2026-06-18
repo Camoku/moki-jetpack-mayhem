@@ -22,9 +22,10 @@
 ;    the Moki between roof and floor so it never leaves the screen.
 ; ==========================================================
 
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://player.gd" id="1_player"]
+[ext_resource type="Script" path="res://darkness.gd" id="15_darkness"]
 [ext_resource type="Script" path="res://background.gd" id="2_bg"]
 [ext_resource type="PackedScene" path="res://Obstacle.tscn" id="3_obstacle"]
 [ext_resource type="Script" path="res://spawner.gd" id="4_spawner"]
@@ -53,11 +54,39 @@ gradient = SubResource("Gradient_orange")
 width = 64
 height = 64
 
+; A soft round glow (white centre -> transparent edge) for the Moki's faint
+; "I can just about see myself" light during a blackout.
+[sub_resource type="Gradient" id="Gradient_glow"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GlowTex_player"]
+gradient = SubResource("Gradient_glow")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
 ; ---------------- ROOT ----------------
 [node name="Main" type="Node2D"]
 
+; ---------------- DARKNESS (Blackout event) ----------------
+; A CanvasModulate that dims the whole world. White by default (no effect);
+; darkness.gd slides it toward near-black during the Blackout event. The HUD
+; (a separate CanvasLayer) and the 2D glow lights are unaffected, so in the
+; dark you only see the coins shine and the hazards glow.
+[node name="Darkness" type="CanvasModulate" parent="."]
+script = ExtResource("15_darkness")
+
 ; ---------------- BACKGROUND ----------------
 [node name="Background" type="ParallaxBackground" parent="."]
+
+; The background is its OWN CanvasLayer (ParallaxBackground extends
+; CanvasLayer), so the root Darkness can't reach it. This second copy dims
+; the stars and floor in lock-step, so the WHOLE scene goes dark together.
+[node name="Darkness" type="CanvasModulate" parent="Background"]
+script = ExtResource("15_darkness")
 
 ; --- Solid black space backdrop ---
 ; motion_scale (0,0) = "ignore the camera", so this just fills the screen.
@@ -327,6 +356,15 @@ offset_top = -46.0
 offset_right = 46.0
 offset_bottom = 46.0
 color = Color(0.3, 0.7, 1, 0.3)
+
+; The Moki's own faint glow (think: the jetpack flame's light). Off in normal
+; play; player.gd raises it during a blackout so you can just make yourself
+; out in the dark - dim on purpose, so it stays tense.
+[node name="Glow" type="PointLight2D" parent="Player"]
+energy = 0.0
+color = Color(1, 0.6, 0.25, 1)
+texture = SubResource("GlowTex_player")
+texture_scale = 1.6
 
 ; ---------------- CAMERA (world auto-scroller) ----------------
 ; The camera is its OWN node now (not a child of the Player). camera.gd

@@ -144,7 +144,16 @@ extends Node2D
 @export var cave_gap_early: float = 260.0      # Gap height early on...
 @export var cave_gap_deep: float = 210.0       # ...and once ramped (still roomy).
 
-enum Phase { BUSY, BREATHER, FRENZY_INTRO, FRENZY, REWARD, STORM, BARRAGE, HIGHWAY, COIN_RUSH, CAVE }
+# --- Blackout (event: the lights go out - only coins/hazards glow) ---
+@export var blackout_min_time: float = 12.0    # No blackouts until this many seconds in.
+@export var blackout_duration: float = 7.0     # How long the lights stay out.
+@export var blackout_fade: float = 0.6         # Seconds to fade the dark in / back out.
+@export var blackout_intro_time: float = 1.2   # Calm beat (lights dimming) before hazards start.
+@export var blackout_asteroid_interval: float = 1.1      # Gap between glowing asteroids early on...
+@export var blackout_asteroid_interval_deep: float = 0.75 # ...and once fully ramped (harder).
+@export var blackout_coin_interval: float = 1.6 # Gap between glowing coin rows (the reward for braving it).
+
+enum Phase { BUSY, BREATHER, FRENZY_INTRO, FRENZY, REWARD, STORM, BARRAGE, HIGHWAY, COIN_RUSH, CAVE, BLACKOUT }
 
 var _phase: int = Phase.BUSY
 var _phase_time_left: float = 0.0
@@ -179,6 +188,8 @@ var _rush_collected: int = 0
 var _rush_perfect: bool = true
 var _cave_wall_timer: float = 0.0
 var _cave_phase: float = 0.0
+var _blackout_asteroid_timer: float = 0.0
+var _blackout_coin_timer: float = 0.0
 var _last_event: String = ""            # the last event we ran, so we don't repeat it
 var _had_event: bool = false            # the FIRST event is guaranteed; later ones roll the dice
 var _run_time: float = 0.0
@@ -190,6 +201,10 @@ var camera: Node2D
 
 func _ready() -> void:
 	add_to_group("spawner")   # so highway rings can report back to us
+	# Lights ON at the start of every run. GameState is an autoload, so this
+	# value survives a scene reload - we must clear it or a new run could
+	# start mid-blackout if the last run died in the dark.
+	GameState.blackout = 0.0
 	# Begin with a BUSY wave, then roll the first spawn delay.
 	_phase_time_left = randf_range(busy_min, busy_max)
 	_roll_next_interval()
@@ -314,6 +329,19 @@ func _process(delta: float) -> void:
 		if cave_wall_scene != null and _cave_wall_timer <= 0.0:
 			_cave_wall_timer = cave_wall_gap
 			_spawn_cave_wall()
+	elif _phase == Phase.BLACKOUT:
+		# Lights are out: show the timer, and feed in glowing asteroids to dodge
+		# plus glowing coin rows to grab by their light alone.
+		_set_status("SURVIVE  %ds" % ceili(_phase_time_left))
+		_blackout_asteroid_timer -= delta
+		if obstacle_scene != null and _blackout_asteroid_timer <= 0.0:
+			# Asteroids arrive faster the deeper you are = harder, same length.
+			_blackout_asteroid_timer = lerp(blackout_asteroid_interval, blackout_asteroid_interval_deep, _difficulty())
+			_spawn_asteroid(_difficulty())
+		_blackout_coin_timer -= delta
+		if coin_scene != null and _blackout_coin_timer <= 0.0:
+			_blackout_coin_timer = blackout_coin_interval
+			_spawn_coin_row()
 
 
 # Move to the next phase. Busy and frenzy both rest into a breather; after a
@@ -339,6 +367,9 @@ func _advance_phase() -> void:
 			_finish_coin_rush()  # safety: judge + exit if the timer ran out
 		Phase.CAVE:
 			_enter_breather()  # tunnel done -> calm (leftover walls finish here)
+		Phase.BLACKOUT:
+			_fade_blackout(0.0)  # bring the lights back up...
+			_enter_breather()    # ...then a calm beat before normal play
 		Phase.BREATHER:
 			# The first event is guaranteed (so it shows up promptly); after
 			# that, a breather leads to an event 'event_chance' of the time.
@@ -355,6 +386,7 @@ func _advance_phase() -> void:
 				"highway": _enter_highway()
 				"coinrush": _enter_coin_rush()
 				"cave": _enter_cave()
+				"blackout": _enter_blackout()
 				_: _enter_busy()
 
 
@@ -375,6 +407,10 @@ func _pick_event() -> String:
 		candidates.append(["coinrush", highway_weight])   # calm event, weighted like highway
 	if cave_wall_scene != null and _run_time >= cave_min_time and _last_event != "cave":
 		candidates.append(["cave", 1.0])
+	# Blackout needs both glowing asteroids AND glowing coins to make sense.
+	if obstacle_scene != null and coin_scene != null \
+			and _run_time >= blackout_min_time and _last_event != "blackout":
+		candidates.append(["blackout", 1.0])
 
 	if candidates.is_empty():
 		return ""
@@ -558,6 +594,28 @@ func _spawn_cave_wall() -> void:
 	c.gap_center = cave_center + cave_amplitude * sin(_cave_phase)
 	c.gap_height = lerp(cave_gap_early, cave_gap_deep, _difficulty())
 	add_child(c)
+
+
+# The lights-out event: the world fades to near-black and the only things you
+# can see are the gold shine of the coins and the red glow of the asteroids
+# (and a faint hint of your own Moki). Survive to the end.
+func _enter_blackout() -> void:
+	_phase = Phase.BLACKOUT
+	_last_event = "blackout"
+	_phase_time_left = blackout_duration
+	# A brief beat with the lights dimming before any hazards arrive.
+	_blackout_asteroid_timer = blackout_intro_time
+	_blackout_coin_timer = blackout_intro_time + 0.4
+	_fade_blackout(1.0)   # smoothly kill the lights
+	_show_banner(">>  BLACKOUT  <<", Color(0.55, 0.55, 0.95), 2.0)
+
+
+# Smoothly slide the world darkness toward 'target' (0 = lights on, 1 = full
+# dark) over blackout_fade seconds. Every coin/asteroid/player glow and the
+# CanvasModulate all read GameState.blackout, so this one tween drives it all.
+func _fade_blackout(target: float) -> void:
+	var tw := create_tween()
+	tw.tween_property(GameState, "blackout", target, blackout_fade)
 
 
 func _enter_busy() -> void:

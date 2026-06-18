@@ -11,12 +11,26 @@
 ;    +-- Inner (ColorRect)<- lighter gold centre
 ; ==========================================================
 
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://coin.gd" id="1_coin"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_coin"]
 size = Vector2(34, 34)
+
+; A soft round glow: white in the middle fading to transparent at the edge.
+; This is the LIGHT TEXTURE the coin's glow shines through in the dark.
+[sub_resource type="Gradient" id="Gradient_glow"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GlowTex_coin"]
+gradient = SubResource("Gradient_glow")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
 
 [node name="Coin" type="Area2D"]
 script = ExtResource("1_coin")
@@ -37,3 +51,11 @@ offset_top = -10.0
 offset_right = 10.0
 offset_bottom = 10.0
 color = Color(1, 0.93, 0.55, 1)
+
+; The coin's gold shine. energy starts at 0 (invisible in normal play);
+; coin.gd cranks it up with GameState.blackout so it only glows in the dark.
+[node name="Glow" type="PointLight2D" parent="."]
+energy = 0.0
+color = Color(1, 0.85, 0.3, 1)
+texture = SubResource("GlowTex_coin")
+texture_scale = 0.7
