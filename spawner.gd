@@ -153,7 +153,12 @@ extends Node2D
 @export var blackout_asteroid_interval_deep: float = 0.75 # ...and once fully ramped (harder).
 @export var blackout_coin_interval: float = 1.6 # Gap between glowing coin rows (the reward for braving it).
 
-enum Phase { BUSY, BREATHER, FRENZY_INTRO, FRENZY, REWARD, STORM, BARRAGE, HIGHWAY, COIN_RUSH, CAVE, BLACKOUT }
+# --- Mini-Boss: Laser Cannon (a scheduled set-piece, every Nth event) ---
+@export var cannon_scene: PackedScene          # the LaserCannon boss
+@export var boss_min_time: float = 30.0        # No mini-boss until this many seconds in.
+@export var boss_every: int = 3                # Every Nth event is the boss instead of a random one.
+
+enum Phase { BUSY, BREATHER, FRENZY_INTRO, FRENZY, REWARD, STORM, BARRAGE, HIGHWAY, COIN_RUSH, CAVE, BLACKOUT, BOSS }
 
 var _phase: int = Phase.BUSY
 var _phase_time_left: float = 0.0
@@ -192,6 +197,7 @@ var _blackout_asteroid_timer: float = 0.0
 var _blackout_coin_timer: float = 0.0
 var _last_event: String = ""            # the last event we ran, so we don't repeat it
 var _had_event: bool = false            # the FIRST event is guaranteed; later ones roll the dice
+var _events_since_boss: int = 0         # counts events so every Nth one is the mini-boss
 var _run_time: float = 0.0
 var _start_x: float = 0.0
 var _have_start: bool = false
@@ -370,24 +376,35 @@ func _advance_phase() -> void:
 		Phase.BLACKOUT:
 			_fade_blackout(0.0)  # bring the lights back up...
 			_enter_breather()    # ...then a calm beat before normal play
+		Phase.BOSS:
+			boss_failed()        # safety: the cannon's own timer should end it first
 		Phase.BREATHER:
 			# The first event is guaranteed (so it shows up promptly); after
 			# that, a breather leads to an event 'event_chance' of the time.
-			# Picks are fair (equal odds, highway a bit rarer) and never repeat.
-			var ev := ""
 			if not _had_event or randf() < event_chance:
-				ev = _pick_event()
-			if ev != "":
-				_had_event = true
-			match ev:
-				"frenzy": _enter_frenzy_intro()
-				"storm": _enter_storm()
-				"barrage": _enter_barrage()
-				"highway": _enter_highway()
-				"coinrush": _enter_coin_rush()
-				"cave": _enter_cave()
-				"blackout": _enter_blackout()
-				_: _enter_busy()
+				# Every Nth event is the scheduled mini-boss (not a random pick).
+				if cannon_scene != null and _run_time >= boss_min_time and _events_since_boss + 1 >= boss_every:
+					_events_since_boss = 0
+					_had_event = true
+					_enter_boss()
+				else:
+					# Otherwise a fair, never-repeating random event (or normal
+					# play if none are eligible yet).
+					var ev := _pick_event()
+					if ev != "":
+						_had_event = true
+						_events_since_boss += 1
+					match ev:
+						"frenzy": _enter_frenzy_intro()
+						"storm": _enter_storm()
+						"barrage": _enter_barrage()
+						"highway": _enter_highway()
+						"coinrush": _enter_coin_rush()
+						"cave": _enter_cave()
+						"blackout": _enter_blackout()
+						_: _enter_busy()
+			else:
+				_enter_busy()
 
 
 # Choose which event to run: equal weight for each (highway a bit less),
@@ -616,6 +633,43 @@ func _enter_blackout() -> void:
 func _fade_blackout(target: float) -> void:
 	var tw := create_tween()
 	tw.tween_property(GameState, "blackout", target, blackout_fade)
+
+
+# The Laser Cannon mini-boss. We spawn it, hand it what it needs, and then just
+# wait: the cannon runs its own fight and calls boss_defeated()/boss_failed()
+# back when it is over. _phase_time_left is only a generous safety net.
+func _enter_boss() -> void:
+	_phase = Phase.BOSS
+	_last_event = "boss"
+	_phase_time_left = 60.0
+	_set_status("")
+	if cannon_scene != null:
+		var boss := cannon_scene.instantiate()
+		boss.vertical_laser_scene = vertical_laser_scene
+		boss.horizontal_laser_scene = horizontal_laser_scene
+		boss.difficulty = _difficulty()
+		add_child(boss)
+	_show_banner(">>  MINI-BOSS: LASER CANNON  <<", Color(1.0, 0.5, 0.4), 1.7)
+
+
+# Called by the cannon when its HP hits zero: celebrate + drop the big reward.
+func boss_defeated() -> void:
+	_show_banner("CANNON DESTROYED!", Color(1.0, 0.85, 0.4), 2.5)
+	_hide_boss_bar()
+	_enter_reward()
+
+
+# Called by the cannon if it survives its time cap (or via the safety above):
+# it retreats, no reward, back to a calm breather.
+func boss_failed() -> void:
+	_hide_boss_bar()
+	_enter_breather()
+
+
+func _hide_boss_bar() -> void:
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud != null and hud.has_method("hide_boss_bar"):
+		hud.hide_boss_bar()
 
 
 func _enter_busy() -> void:

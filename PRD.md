@@ -34,8 +34,8 @@ reward beats so it's not pure stress.
 
 ## 3. Current status (2026-06-18)
 
-Core loop, movement, scoring, save system, 5 hazard types, 4 powerups, coins, and a
-7-event rotation are **built and compile-clean**. Biggest gap: **no upgrade store yet**
+Core loop, movement, scoring, save system, 5 hazard types, 4 powerups, coins, a
+7-event rotation, and a recurring **mini-boss** are **built and compile-clean**. Biggest gap: **no upgrade store yet**
 (coins bank but can't be spent), and no audio/juice/real art. Balance is unverified by
 real playtesting in places (noted per item).
 
@@ -60,6 +60,9 @@ real playtesting in places (noted per item).
       Coin Rush, Narrow Cave, **Blackout** — fair weighted rotation, no repeats, clean-sweep rewards
 - [x] **2D lighting** — `CanvasModulate` darkness + per-object `PointLight2D` glows
       (coins/asteroids/Moki), driven by `GameState.blackout` (for the Blackout event)
+- [x] **Mini-boss: Laser Cannon** — every 3rd event; dodge its telegraphed sweeping
+      beams, fly into the exposed core during OVERHEAT to deplete HP; kill → reward,
+      time out → retreat. HUD boss health bar.
 
 ### 🔜 To build (roughly in priority order)
 - [ ] **Upgrade Store** *(next — the big one)*. End-of-run shop to spend banked coins on
@@ -76,8 +79,8 @@ real playtesting in places (noted per item).
 - [ ] **Disk-persist owned upgrades** (part of store, but call it out)
 
 ### 🅿️ Parking lot (ideas, not committed)
-- More events: **Laser Cannon mini-boss** (telegraphed sweeping beams),
-  **Wind Gusts**, **Reverse-gravity zone**
+- More events: **Wind Gusts**, **Reverse-gravity zone**
+- More mini-bosses (the cannon is the first; the fight framework can host others)
 - Daily challenge / seed runs
 - Cosmetic Moki skins (bought with coins)
 - Combo/streak scoring; near-miss bonus

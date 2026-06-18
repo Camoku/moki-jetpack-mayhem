@@ -18,6 +18,9 @@ enum State { CHARGING, FIRING }
 @export var beam_width: float = 1700.0    # Wide enough to cover the whole screen.
 @export var charge_time: float = 1.0      # Warning time before firing.
 @export var fire_time: float = 1.4        # How long it stays deadly.
+# Optional vertical sweep: pixels/sec the beam slides up/down the screen
+# (the mini-boss sets this so its beams sweep). 0 = a normal, still beam.
+@export var sweep_speed: float = 0.0
 
 const COLOR_BEAM := Color(1.0, 0.3, 0.25, 1.0)
 
@@ -49,6 +52,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	# Optionally drift our height so the beam sweeps up or down over time.
+	beam_y += sweep_speed * delta
+
 	# Stay centred on the screen (follow the camera), fixed at our height.
 	if camera == null:
 		camera = get_tree().get_first_node_in_group("camera")

@@ -44,8 +44,14 @@ var player: Node2D
 @onready var powerup_label: Label = $PowerupLabel
 @onready var banner_label: Label = $BannerLabel
 @onready var survival_label: Label = $SurvivalLabel
+@onready var boss_bar: Control = $BossBar
+@onready var boss_fill: ColorRect = $BossBar/Fill
+@onready var boss_label: Label = $BossBar/Label
 @onready var game_over_panel: Control = $GameOverPanel
 @onready var final_label: Label = $GameOverPanel/Center/VBox/FinalLabel
+
+# Full pixel width of the boss health bar (matches the BossBar in Main.tscn).
+const BOSS_BAR_WIDTH := 360.0
 
 # Seconds the flash banner stays up after it appears.
 var _banner_time: float = 0.0
@@ -66,6 +72,7 @@ func _ready() -> void:
 	game_over_panel.visible = false
 	banner_label.visible = false
 	survival_label.visible = false
+	boss_bar.visible = false
 	mult_label.text = "Multiplier: x1.0"
 	coin_label.text = "Coins: 0"
 	best_label.text = "Best: %d m" % GameState.best_distance
@@ -105,6 +112,19 @@ func set_status(text: String) -> void:
 	else:
 		survival_label.text = text
 		survival_label.visible = true
+
+
+# Called by the mini-boss to show/update its health bar. The fill shrinks as
+# its HP drops; at 0 the spawner hides the bar via hide_boss_bar().
+func set_boss_health(cur: int, mx: int) -> void:
+	boss_bar.visible = true
+	boss_label.text = "LASER CANNON   %d / %d" % [cur, mx]
+	var frac: float = clampf(float(cur) / float(mx), 0.0, 1.0)
+	boss_fill.size.x = BOSS_BAR_WIDTH * frac
+
+
+func hide_boss_bar() -> void:
+	boss_bar.visible = false
 
 
 # Called by the spawner to flash a centred message (frenzy start, frenzy

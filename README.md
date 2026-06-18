@@ -60,6 +60,7 @@ Main (Node2D)
 | `BeamObstacle.tscn` / `beam_obstacle.gd` | Floating capped laser bar (H or V) |
 | `Missile.tscn` / `missile.gd` | Warns ("!") at the right edge, then strikes left |
 | `CaveWall.tscn` / `cave_wall.gd` | One tunnel slice (top+bottom walls + gap) for the Cave event |
+| `LaserCannon.tscn` / `laser_cannon.gd` | The mini-boss (every 3rd event); reuses the lasers as its attacks |
 
 ### Pickups
 | Scene / Script | Pickup |
@@ -125,6 +126,25 @@ to 0 in `_ready()` (it's an autoload value, so it must be cleared each run). Not
 `ParallaxBackground` is its own `CanvasLayer`, so it needs its **own** `CanvasModulate`
 (there are two `Darkness` nodes — one for the world, one for the background).
 
+### The mini-boss (Laser Cannon) — every 3rd event
+Not a random pick: the spawner counts events and makes **every `boss_every` (3)** one the
+boss instead (`Phase.BOSS`, `_enter_boss()`), after `boss_min_time`. The Moki has no
+weapon, so the fight is a dodge-then-punish loop run entirely by `laser_cannon.gd`:
+
+- **INTRO** — announcement banner plays while the cannon waits off-screen, then it drops
+  in (`arrive_delay`) and the HUD HP bar appears.
+- **ATTACK** — fires a telegraphed beam pattern (reusing `VerticalLaser`/`HorizontalLaser`,
+  including a new optional `sweep_speed` that makes a beam slide across); the core is sealed.
+- **OVERHEAT** — beams stop, the **core** glows and becomes touchable; fly the Moki into it
+  (`Core.body_entered`) to deal −1 HP (with a short `hit_cooldown`).
+- Loop until **HP 0 → destroyed** (→ shared reward) or **`max_time` → retreat** (no reward).
+
+Only the **beams are deadly** — the housing is scenery and the core is *beneficial*, so
+there's no cheap "touched the boss = dead". The boss reports HP to the HUD
+(`set_boss_health` / `hide_boss_bar`) and calls `spawner.boss_defeated()` /
+`boss_failed()` when it ends. Key knobs live on `laser_cannon.gd`: `max_hp`, the phase
+times, `max_time`, `sweep_speed`.
+
 ---
 
 ## Pacing & anti-clutter
@@ -152,5 +172,5 @@ Stores `high_score`, `best_distance`, `coins`. Delete it to reset progress.
 
 ## Ideas not yet built
 - **Upgrade store** — spend banked coins on permanent boosts (the big next feature).
-- More events: **Laser Cannon mini-boss**, **Wind Gusts**, **Reverse-gravity zone**.
+- More events: **Wind Gusts**, **Reverse-gravity zone**; more mini-bosses.
 - Sound/juice (screen shake, particles), real Moki art.

@@ -24,6 +24,9 @@ enum State { CHARGING, FIRING }
 @export var offset_x: float = 0.0         # Screen offset from camera centre (set by spawner).
 @export var charge_time: float = 1.0      # Warning time before firing.
 @export var fire_time: float = 1.1        # How long it stays deadly.
+# Optional horizontal sweep: pixels/sec the beam slides across the screen
+# (the mini-boss sets this so its beams sweep). 0 = a normal, still beam.
+@export var sweep_speed: float = 0.0
 
 const COLOR_BEAM := Color(1.0, 0.3, 0.25, 1.0)
 
@@ -57,6 +60,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	# Optionally drift our screen offset so the beam sweeps sideways over time.
+	offset_x += sweep_speed * delta
+
 	# Stay locked to a fixed spot on the screen as the world scrolls.
 	if camera == null:
 		camera = get_tree().get_first_node_in_group("camera")
