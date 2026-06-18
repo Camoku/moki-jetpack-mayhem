@@ -39,6 +39,15 @@ func _apply_look() -> void:
 		"ghost":
 			box.color = Color(0.85, 0.9, 1.0, 1.0)
 			label.text = "G"
+		"dash":
+			box.color = Color(1.0, 0.5, 0.2, 1.0)
+			label.text = ">>"
+		"tiny":
+			box.color = Color(0.5, 1.0, 0.5, 1.0)
+			label.text = "T"
+		"secondchance":
+			box.color = Color(1.0, 0.4, 0.6, 1.0)
+			label.text = "+1"
 		_:
 			box.color = Color(0.7, 0.7, 0.7, 1.0)
 			label.text = "?"

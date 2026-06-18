@@ -51,6 +51,13 @@ extends CharacterBody2D
 @export var ghost_time: float = 5.0         # Ghost: how long we phase through hazards.
 @export var ghost_invuln_time: float = 1.2  # Grace (blinking i-frames) right after Ghost ends.
 
+# --- New powerups ---
+@export var dash_time: float = 2.0          # Dash: seconds of invincible rocket-boost.
+@export var dash_boost_mult: float = 2.6    # Dash: how hard the world rockets past.
+@export var tiny_scale: float = 0.55        # Tiny Moki: shrink factor (smaller = slip through more).
+@export var tiny_time: float = 6.0          # Tiny Moki: how long you stay small.
+@export var second_chance_invuln: float = 1.6  # Second Chance: i-frames granted by a revive.
+
 # A reference to the flame node so we can show/hide it. The $ is shorthand
 # for get_node(): $Flame finds the child named "Flame". @onready waits until
 # the node is actually in the scene before grabbing it.
@@ -71,6 +78,9 @@ var dead: bool = false
 # Shield powerup state.
 var has_shield: bool = false
 var invuln: float = 0.0   # seconds of post-shield invincibility remaining
+
+# A held Second Chance revive token.
+var _has_second_chance: bool = false
 
 # Timed powerups: a name -> seconds-remaining table. A powerup is active
 # while its entry exists; when its time hits zero we remove it.
@@ -170,6 +180,15 @@ func gain_powerup(kind: String) -> void:
 			timers["doubler"] = doubler_time
 		"ghost":
 			timers["ghost"] = ghost_time
+		"dash":
+			# An invincible rocket burst: i-frames + the world boosts past us.
+			invuln = maxf(invuln, dash_time)
+			if camera != null and camera.has_method("add_boost"):
+				camera.add_boost(dash_time, dash_boost_mult)
+		"tiny":
+			timers["tiny"] = tiny_time
+		"secondchance":
+			_has_second_chance = true
 
 
 # True while the named timed powerup is running.
@@ -187,6 +206,8 @@ func powerup_status() -> String:
 	var parts: Array[String] = []
 	if has_shield:
 		parts.append("Shield")
+	if _has_second_chance:
+		parts.append("2nd Chance")
 	for key in timers:
 		parts.append("%s %ds" % [String(key).capitalize(), ceili(timers[key])])
 	return "  ".join(parts)
@@ -196,6 +217,11 @@ func powerup_status() -> String:
 func _update_powerups(delta: float) -> void:
 	if invuln > 0.0:
 		invuln -= delta
+
+	# Tiny Moki: smoothly shrink the whole Moki (collision + visuals) while active,
+	# and grow back when it ends.
+	var target_scale := tiny_scale if is_active("tiny") else 1.0
+	scale = scale.lerp(Vector2(target_scale, target_scale), delta * 10.0)
 
 	# Count each timed powerup down; drop any that have run out.
 	# (.keys() gives a copy, so erasing mid-loop is safe.)
@@ -253,6 +279,19 @@ func crash() -> void:
 		has_shield = false
 		shield_visual.visible = false
 		invuln = shield_invuln_time
+		return
+
+	# A held Second Chance revives us once instead of dying - a dramatic save
+	# with i-frames to escape the hazard we just hit.
+	if _has_second_chance:
+		_has_second_chance = false
+		invuln = maxf(invuln, second_chance_invuln)
+		var hud_sc := get_tree().get_first_node_in_group("hud")
+		if hud_sc != null:
+			if hud_sc.has_method("show_banner"):
+				hud_sc.show_banner("SECOND CHANCE!", Color(1.0, 0.5, 0.7, 1.0), 2.0)
+			if hud_sc.has_method("flash"):
+				hud_sc.flash(Color(1.0, 0.5, 0.7, 0.45))
 		return
 
 	# No shield - this is a real crash.

@@ -81,10 +81,20 @@ Main (Node2D)
 - **Multiplier** is tiered: every `coins_per_tier` (25) coins adds `+0.1`.
 - Coins also **bank** as permanent currency (for a future upgrade store).
 
-## Powerups (all 5s)
-- **Shield** — absorbs one hit (one-shot). | **Ghost** — fly through everything
-  (rainbow pulse) + i-frames after. | **Magnet** — pulls coins in. | **Doubler** —
-  coins count double.
+## Powerups
+One `Powerup.tscn`; `type` picks the look (`powerup.gd`) + effect (`player.gain_powerup()`).
+- **Shield** — absorbs one hit (one-shot). | **Ghost** — fly through everything (rainbow
+  pulse) + i-frames after. | **Magnet** — pulls coins in. | **Doubler** — coins count double.
+- **Dash** (`>>`) — an **invincible rocket burst**: i-frames + a strong camera boost (~2s),
+  blast straight through hazards (reuses the boost gear, so no screen-edge clamp).
+- **Tiny Moki** (`T`) — lerps the **Player node's `scale`** down (~0.55) for a few seconds so
+  you slip through tighter gaps.
+- **Second Chance** (`+1`) — a *held* revive token: in `crash()`, after shield, it's consumed
+  to revive you once (banner + flash + i-frames) instead of game over. Spawns **rare** via
+  the weighted `_pick_powerup_type()` (`powerup_weights`).
+- The timed ones (magnet/doubler/ghost/tiny) live in the `timers` dict; Shield/Second Chance
+  are held bools. A **perfect Highway / Coin Rush** sweep grants `sweep_bonus_coins` (+50) +
+  a free Shield, on top of the reward block.
 
 ---
 

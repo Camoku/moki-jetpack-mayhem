@@ -64,9 +64,11 @@ extends Node2D
 # --- Powerups (rare special pickups) ---
 @export var powerup_scene: PackedScene
 # The list of powerups that can appear. Add more here as we build them.
-@export var powerup_types: Array[String] = ["shield", "magnet", "doubler", "ghost"]
+@export var powerup_types: Array[String] = ["shield", "magnet", "doubler", "ghost", "dash", "tiny", "secondchance"]
 @export var powerup_interval_min: float = 9.0   # Random gap between powerups...
 @export var powerup_interval_max: float = 15.0  # ...somewhere in this range.
+# Relative spawn weight per type (missing = 1.0). Second Chance (a revive) is rare.
+@export var powerup_weights: Dictionary = {"secondchance": 0.25}
 
 # Spawning speeds up as difficulty climbs from start_interval to min_interval.
 @export var start_interval: float = 1.6   # Seconds between spawns at the start.
@@ -124,7 +126,8 @@ extends Node2D
 @export var barrage_volley_interval_deep: float = 1.3 # ...and once fully ramped (harder).
 
 # --- Boost Highway (event: a flowing chain of boost rings, no hazards) ---
-@export var highway_duration: float = 8.0      # How long rings keep spawning.
+@export var highway_ring_count: int = 15        # How many rings in the chain (the "x / y" total).
+@export var highway_duration: float = 8.0      # Safety window length (we exit early once rings resolve).
 @export var highway_ring_gap: float = 0.7      # Seconds between rings (spread out).
 @export var highway_center: float = 325.0      # Middle height of the wavy ring path.
 @export var highway_amplitude: float = 180.0   # How far the path waves up/down.
@@ -170,6 +173,7 @@ extends Node2D
 @export var main_recur_every: int = 4          # After the main boss, every Nth boss slot is the main again.
 @export var boss_bonus_coins: int = 250        # Coin payout for destroying the main boss.
 @export var boss_bonus_mult: float = 0.5       # Run-long score-multiplier bump from the main boss.
+@export var sweep_bonus_coins: int = 50        # Coin payout for a PERFECT Highway / Coin Rush (clean sweep).
 
 const MINI_BOSSES: Array[String] = ["cannon", "frigate", "golem"]
 
@@ -564,12 +568,13 @@ func _enter_highway() -> void:
 	_highway_spawn_timer = 0.3   # first ring arrives quickly
 	_highway_spawning = true
 	# A fixed number of rings, so the "x / y" counter has a known total.
-	_highway_total = maxi(1, roundi(highway_duration / highway_ring_gap))
+	_highway_total = maxi(1, highway_ring_count)
 	_highway_spawned = 0
 	_highway_resolved = 0
 	_highway_hit = 0
 	_highway_perfect = true
-	_phase_time_left = highway_duration + 10.0   # generous safety cap; we exit earlier
+	# Safety cap long enough to spawn all rings (gap each) + travel + resolve.
+	_phase_time_left = highway_ring_count * highway_ring_gap + 12.0
 	_show_banner(">>  BOOST HIGHWAY  <<", Color(0.4, 1.0, 0.8), 2.0)
 
 
@@ -591,7 +596,8 @@ func _spawn_highway_ring() -> void:
 func _finish_highway() -> void:
 	_event_survived()   # progression tick + celebration burst
 	if _highway_spawned > 0 and _highway_perfect:
-		_show_banner("BOOST MASTER!", Color(0.4, 1.0, 0.8), 2.5)
+		_grant_sweep_bonus()
+		_show_banner("BOOST MASTER!  +%d COINS" % sweep_bonus_coins, Color(0.4, 1.0, 0.8), 2.5)
 		_enter_reward()
 	else:
 		_enter_breather()
@@ -646,7 +652,8 @@ func _spawn_rush_coin() -> void:
 func _finish_coin_rush() -> void:
 	_event_survived()   # progression tick + celebration burst
 	if _rush_spawned > 0 and _rush_perfect:
-		_show_banner("COIN MASTER!", Color(1.0, 0.85, 0.3), 2.5)
+		_grant_sweep_bonus()
+		_show_banner("COIN MASTER!  +%d COINS" % sweep_bonus_coins, Color(1.0, 0.85, 0.3), 2.5)
 		_enter_reward()
 	else:
 		_enter_breather()
@@ -805,6 +812,17 @@ func _grant_main_bonus() -> void:
 			hud.add_coin(boss_bonus_coins)
 		if hud.has_method("add_bonus_multiplier"):
 			hud.add_bonus_multiplier(boss_bonus_mult)
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and player.has_method("gain_powerup"):
+		player.gain_powerup("shield")
+
+
+# A perfect Highway / Coin Rush (clean sweep) earns a boss-style payoff: a chunk
+# of banked coins + a free shield, on top of the usual reward block.
+func _grant_sweep_bonus() -> void:
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud != null and hud.has_method("add_coin"):
+		hud.add_coin(sweep_bonus_coins)
 	var player := get_tree().get_first_node_in_group("player")
 	if player != null and player.has_method("gain_powerup"):
 		player.gain_powerup("shield")
@@ -1306,9 +1324,23 @@ func _spawn_powerup() -> void:
 		return   # no clear spot this time - skip rather than overlap
 
 	var p := powerup_scene.instantiate()
-	p.type = powerup_types.pick_random()   # choose a random powerup from the list
+	p.type = _pick_powerup_type()
 	p.position = Vector2(x, y)
 	add_child(p)
+
+
+# Weighted random powerup type: most are equally likely (weight 1.0), but a few
+# (the Second Chance revive) are rarer via powerup_weights.
+func _pick_powerup_type() -> String:
+	var total := 0.0
+	for t in powerup_types:
+		total += float(powerup_weights.get(t, 1.0))
+	var roll := randf() * total
+	for t in powerup_types:
+		roll -= float(powerup_weights.get(t, 1.0))
+		if roll <= 0.0:
+			return str(t)
+	return str(powerup_types[0])
 
 
 # Approximate sizes (radii) of the things we place. Two objects are "too

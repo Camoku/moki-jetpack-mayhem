@@ -34,7 +34,7 @@ reward beats so it's not pure stress.
 
 ## 3. Current status (2026-06-18)
 
-Core loop, movement, scoring, save system, 8 hazard types, 4 powerups, coins, a
+Core loop, movement, scoring, save system, 8 hazard types, 7 powerups, coins, a
 7-event rotation, a full **boss progression** (3 mini-bosses → a main boss → endless
 overdrive), **milestone-gated unlocks**, and a **celebration/juice layer** (speed burst +
 shake + flash + fireworks) are **built and compile-clean**. Biggest gap: **no upgrade store
@@ -56,7 +56,9 @@ real playtesting in places (noted per item).
 - [x] **Hazards** — asteroids (+drift), vertical laser, horizontal laser, beam gates, missiles,
       **bouncing orbs** (zig-zag), **crusher gates** (timing; clear lane while passing), **homing drones**
 - [x] **Pickups** — coins (bank + multiplier)
-- [x] **Powerups** — Shield, Ghost, Magnet, Doubler (timed system, 5s each)
+- [x] **Powerups (7)** — Shield, Ghost, Magnet, Doubler, **Dash** (invincible rocket burst),
+      **Tiny Moki** (shrink to slip through), **Second Chance** (held revive, rare spawn via
+      `powerup_weights`). Clean-sweep Highway/Coin Rush now also grant +coins + a free shield.
 - [x] **Pacing** — wave system (busy/breather), difficulty ramp, scaling hazard cap
 - [x] **Spawn clearance** — pickups never overlap hazards (radius-based)
 - [x] **Events (7):** Laser Frenzy, Asteroid Storm, Missile Barrage, Boost Highway,
