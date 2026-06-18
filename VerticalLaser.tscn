@@ -1,0 +1,19 @@
+; ==========================================================
+;  VerticalLaser.tscn - a solid full-height laser
+; ==========================================================
+;  vertical_laser.gd sizes these to span the whole play height:
+;    CollisionShape2D <- the deadly box
+;    Beam             <- the red visual
+; ==========================================================
+
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://vertical_laser.gd" id="1_vl"]
+
+[node name="VerticalLaser" type="Area2D"]
+script = ExtResource("1_vl")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+
+[node name="Beam" type="ColorRect" parent="."]
+color = Color(1, 0.3, 0.25, 1)

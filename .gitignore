@@ -1,0 +1,14 @@
+# Godot 4+ .gitignore
+
+# Godot-imported assets cache (regenerated on open)
+.godot/
+
+# Exported builds
+/build/
+*.exe
+*.pck
+*.zip
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db

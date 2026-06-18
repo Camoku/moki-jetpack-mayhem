@@ -1,0 +1,66 @@
+; ==========================================================
+;  Missile.tscn - a missile that flies in from the right
+; ==========================================================
+;  missile.gd runs it in two stages: it hovers at the right edge
+;  flashing a circular "!" warning at its height, then launches left.
+;
+;    CollisionShape2D <- the deadly box
+;    Body / Tip       <- the missile visual (hidden until launch)
+;    WarnBg (Panel)   <- white circle + red ring behind the "!"
+;      +-- Warn       <- the red "!" itself
+; ==========================================================
+
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://missile.gd" id="1_missile"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_missile"]
+size = Vector2(44, 20)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_warn"]
+bg_color = Color(1, 1, 1, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.25, 0.2, 1)
+corner_radius_top_left = 26
+corner_radius_top_right = 26
+corner_radius_bottom_right = 26
+corner_radius_bottom_left = 26
+
+[node name="Missile" type="Area2D"]
+script = ExtResource("1_missile")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_missile")
+
+[node name="Body" type="ColorRect" parent="."]
+offset_left = -22.0
+offset_top = -10.0
+offset_right = 22.0
+offset_bottom = 10.0
+color = Color(1, 0.5, 0.15, 1)
+
+[node name="Tip" type="ColorRect" parent="."]
+offset_left = -28.0
+offset_top = -6.0
+offset_right = -20.0
+offset_bottom = 6.0
+color = Color(1, 0.88, 0.45, 1)
+
+[node name="WarnBg" type="Panel" parent="."]
+offset_left = -26.0
+offset_top = -26.0
+offset_right = 26.0
+offset_bottom = 26.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_warn")
+
+[node name="Warn" type="Label" parent="WarnBg"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(1, 0.25, 0.2, 1)
+theme_override_font_sizes/font_size = 40
+text = "!"
+horizontal_alignment = 1
+vertical_alignment = 1

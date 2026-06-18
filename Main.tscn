@@ -1,0 +1,462 @@
+; ==========================================================
+;  Main.tscn - the whole game scene laid out as text.
+;
+;  Node tree:
+;    Main (Node2D)                        <- the root
+;    +-- Background (ParallaxBackground)  <- auto-follows the Camera
+;    |    +-- SpaceLayer  (ParallaxLayer) <- solid black backdrop (pinned)
+;    |    +-- StarsFar    (ParallaxLayer) <- dim stars, drift slowly
+;    |    +-- StarsNear   (ParallaxLayer) <- bright stars, drift faster
+;    |    +-- FloorLayer  (ParallaxLayer) <- uniform floor (never pops)
+;    +-- Player (CharacterBody2D)         <- the Moki (runs player.gd)
+;         +-- CollisionShape2D            <- its physical body
+;         +-- Sprite2D                    <- the orange placeholder
+;         +-- Camera2D                    <- follows X, LOCKED on Y
+;
+;  Key idea this version teaches:
+;    The camera is locked vertically (limit_top/limit_bottom), so the
+;    screen always shows world Y 0..720. That means:
+;      - world Y 0   = TOP of the screen (the roof)
+;      - world Y 720 = BOTTOM of the screen (the floor)
+;    A uniform floor pinned down there can NEVER pop, and we can clamp
+;    the Moki between roof and floor so it never leaves the screen.
+; ==========================================================
+
+[gd_scene load_steps=18 format=3]
+
+[ext_resource type="Script" path="res://player.gd" id="1_player"]
+[ext_resource type="Script" path="res://background.gd" id="2_bg"]
+[ext_resource type="PackedScene" path="res://Obstacle.tscn" id="3_obstacle"]
+[ext_resource type="Script" path="res://spawner.gd" id="4_spawner"]
+[ext_resource type="PackedScene" path="res://VerticalLaser.tscn" id="5_vlaser"]
+[ext_resource type="PackedScene" path="res://HorizontalLaser.tscn" id="6_hlaser"]
+[ext_resource type="Script" path="res://camera.gd" id="7_camera"]
+[ext_resource type="Script" path="res://hud.gd" id="8_hud"]
+[ext_resource type="PackedScene" path="res://Coin.tscn" id="9_coin"]
+[ext_resource type="PackedScene" path="res://Powerup.tscn" id="10_powerup"]
+[ext_resource type="PackedScene" path="res://BeamObstacle.tscn" id="11_beam"]
+[ext_resource type="PackedScene" path="res://BoostRing.tscn" id="12_ring"]
+[ext_resource type="PackedScene" path="res://Missile.tscn" id="13_missile"]
+[ext_resource type="PackedScene" path="res://CaveWall.tscn" id="14_cavewall"]
+
+; The Moki's physical collision box: a 64x64 rectangle.
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_box"]
+size = Vector2(64, 64)
+
+; A tiny color ramp that is orange at BOTH ends -> a flat orange texture.
+[sub_resource type="Gradient" id="Gradient_orange"]
+colors = PackedColorArray(1, 0.55, 0.1, 1, 1, 0.55, 0.1, 1)
+
+; A 64x64 solid-orange texture for the Sprite2D (no image file needed).
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_orange"]
+gradient = SubResource("Gradient_orange")
+width = 64
+height = 64
+
+; ---------------- ROOT ----------------
+[node name="Main" type="Node2D"]
+
+; ---------------- BACKGROUND ----------------
+[node name="Background" type="ParallaxBackground" parent="."]
+
+; --- Solid black space backdrop ---
+; motion_scale (0,0) = "ignore the camera", so this just fills the screen.
+[node name="SpaceLayer" type="ParallaxLayer" parent="Background"]
+motion_scale = Vector2(0, 0)
+
+[node name="Space" type="ColorRect" parent="Background/SpaceLayer"]
+offset_left = -200.0
+offset_top = -200.0
+offset_right = 1480.0
+offset_bottom = 920.0
+color = Color(0.02, 0.02, 0.06, 1)
+script = ExtResource("2_bg")
+
+; --- Far stars (deep space) ---
+; Drift slowly (motion_scale 0.2) and tile every 1280px (motion_mirroring).
+; Because the stars tile, they go on forever; because each one is tiny,
+; them sliding past the edge reads as "starfield motion", not a hard seam.
+[node name="StarsFar" type="ParallaxLayer" parent="Background"]
+motion_scale = Vector2(0.2, 1)
+motion_mirroring = Vector2(1280, 0)
+
+[node name="F1" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 60.0
+offset_top = 90.0
+offset_right = 62.0
+offset_bottom = 92.0
+color = Color(0.7, 0.7, 0.8, 1)
+
+[node name="F2" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 180.0
+offset_top = 220.0
+offset_right = 182.0
+offset_bottom = 222.0
+color = Color(0.6, 0.6, 0.7, 1)
+
+[node name="F3" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 250.0
+offset_top = 60.0
+offset_right = 253.0
+offset_bottom = 63.0
+color = Color(0.75, 0.75, 0.85, 1)
+
+[node name="F4" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 340.0
+offset_top = 380.0
+offset_right = 342.0
+offset_bottom = 382.0
+color = Color(0.6, 0.6, 0.72, 1)
+
+[node name="F5" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 430.0
+offset_top = 150.0
+offset_right = 432.0
+offset_bottom = 152.0
+color = Color(0.7, 0.7, 0.8, 1)
+
+[node name="F6" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 520.0
+offset_top = 300.0
+offset_right = 523.0
+offset_bottom = 303.0
+color = Color(0.72, 0.72, 0.82, 1)
+
+[node name="F7" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 610.0
+offset_top = 90.0
+offset_right = 612.0
+offset_bottom = 92.0
+color = Color(0.6, 0.6, 0.7, 1)
+
+[node name="F8" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 700.0
+offset_top = 240.0
+offset_right = 702.0
+offset_bottom = 242.0
+color = Color(0.7, 0.7, 0.8, 1)
+
+[node name="F9" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 790.0
+offset_top = 420.0
+offset_right = 793.0
+offset_bottom = 423.0
+color = Color(0.75, 0.75, 0.85, 1)
+
+[node name="F10" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 880.0
+offset_top = 120.0
+offset_right = 882.0
+offset_bottom = 122.0
+color = Color(0.6, 0.6, 0.7, 1)
+
+[node name="F11" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 960.0
+offset_top = 320.0
+offset_right = 962.0
+offset_bottom = 322.0
+color = Color(0.68, 0.68, 0.78, 1)
+
+[node name="F12" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 1040.0
+offset_top = 200.0
+offset_right = 1043.0
+offset_bottom = 203.0
+color = Color(0.72, 0.72, 0.82, 1)
+
+[node name="F13" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 1120.0
+offset_top = 70.0
+offset_right = 1122.0
+offset_bottom = 72.0
+color = Color(0.6, 0.6, 0.7, 1)
+
+[node name="F14" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 1180.0
+offset_top = 450.0
+offset_right = 1182.0
+offset_bottom = 452.0
+color = Color(0.7, 0.7, 0.8, 1)
+
+[node name="F15" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 140.0
+offset_top = 480.0
+offset_right = 142.0
+offset_bottom = 482.0
+color = Color(0.62, 0.62, 0.72, 1)
+
+[node name="F16" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 470.0
+offset_top = 520.0
+offset_right = 472.0
+offset_bottom = 522.0
+color = Color(0.6, 0.6, 0.7, 1)
+
+[node name="F17" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 820.0
+offset_top = 540.0
+offset_right = 822.0
+offset_bottom = 542.0
+color = Color(0.62, 0.62, 0.72, 1)
+
+[node name="F18" type="ColorRect" parent="Background/StarsFar"]
+offset_left = 1000.0
+offset_top = 500.0
+offset_right = 1002.0
+offset_bottom = 502.0
+color = Color(0.6, 0.6, 0.7, 1)
+
+; --- Near stars (closer, brighter, drift faster -> parallax depth) ---
+[node name="StarsNear" type="ParallaxLayer" parent="Background"]
+motion_scale = Vector2(0.55, 1)
+motion_mirroring = Vector2(1000, 0)
+
+[node name="N1" type="ColorRect" parent="Background/StarsNear"]
+offset_left = 120.0
+offset_top = 140.0
+offset_right = 123.0
+offset_bottom = 143.0
+color = Color(0.95, 0.95, 1, 1)
+
+[node name="N2" type="ColorRect" parent="Background/StarsNear"]
+offset_left = 300.0
+offset_top = 300.0
+offset_right = 303.0
+offset_bottom = 303.0
+color = Color(0.9, 0.9, 1, 1)
+
+[node name="N3" type="ColorRect" parent="Background/StarsNear"]
+offset_left = 500.0
+offset_top = 100.0
+offset_right = 504.0
+offset_bottom = 104.0
+color = Color(1, 1, 1, 1)
+
+[node name="N4" type="ColorRect" parent="Background/StarsNear"]
+offset_left = 650.0
+offset_top = 380.0
+offset_right = 653.0
+offset_bottom = 383.0
+color = Color(0.9, 0.9, 1, 1)
+
+[node name="N5" type="ColorRect" parent="Background/StarsNear"]
+offset_left = 780.0
+offset_top = 200.0
+offset_right = 783.0
+offset_bottom = 203.0
+color = Color(0.95, 0.95, 1, 1)
+
+[node name="N6" type="ColorRect" parent="Background/StarsNear"]
+offset_left = 900.0
+offset_top = 460.0
+offset_right = 904.0
+offset_bottom = 464.0
+color = Color(1, 1, 1, 1)
+
+[node name="N7" type="ColorRect" parent="Background/StarsNear"]
+offset_left = 420.0
+offset_top = 470.0
+offset_right = 423.0
+offset_bottom = 473.0
+color = Color(0.9, 0.9, 1, 1)
+
+[node name="N8" type="ColorRect" parent="Background/StarsNear"]
+offset_left = 200.0
+offset_top = 520.0
+offset_right = 203.0
+offset_bottom = 523.0
+color = Color(0.9, 0.9, 1, 1)
+
+; --- The FLOOR ---
+; The key change: motion_scale (0,0) PINS this to the screen (exactly like
+; the black backdrop), so the floor does NOT scroll or tile at all. It is
+; one solid strip across the whole screen width -> perfectly consistent,
+; with zero chance of a tiling seam ever showing up.
+[node name="FloorLayer" type="ParallaxLayer" parent="Background"]
+motion_scale = Vector2(0, 0)
+
+[node name="FloorBase" type="ColorRect" parent="Background/FloorLayer"]
+offset_left = -100.0
+offset_top = 660.0
+offset_right = 1380.0
+offset_bottom = 720.0
+color = Color(0.12, 0.13, 0.18, 1)
+
+[node name="FloorEdge" type="ColorRect" parent="Background/FloorLayer"]
+offset_left = -100.0
+offset_top = 660.0
+offset_right = 1380.0
+offset_bottom = 666.0
+color = Color(0.3, 0.55, 0.7, 1)
+
+; ---------------- PLAYER (the Moki) ----------------
+[node name="Player" type="CharacterBody2D" parent="."]
+position = Vector2(200, 300)
+script = ExtResource("1_player")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+shape = SubResource("RectangleShape2D_box")
+
+[node name="Sprite2D" type="Sprite2D" parent="Player"]
+texture = SubResource("GradientTexture2D_orange")
+
+; The jetpack: a small grey tank mounted on the Moki's back (left side,
+; since the Moki always faces right).
+[node name="Jetpack" type="ColorRect" parent="Player"]
+offset_left = -46.0
+offset_top = -18.0
+offset_right = -28.0
+offset_bottom = 22.0
+color = Color(0.45, 0.45, 0.52, 1)
+
+; The flame shoots out the bottom of the jetpack. It starts hidden and
+; player.gd flips it visible only while the boost button is held.
+[node name="Flame" type="ColorRect" parent="Player"]
+visible = false
+offset_left = -44.0
+offset_top = 22.0
+offset_right = -30.0
+offset_bottom = 60.0
+color = Color(1, 0.7, 0.1, 1)
+
+; A translucent force-field bubble, shown only while a Shield is active.
+[node name="Shield" type="ColorRect" parent="Player"]
+visible = false
+offset_left = -46.0
+offset_top = -46.0
+offset_right = 46.0
+offset_bottom = 46.0
+color = Color(0.3, 0.7, 1, 0.3)
+
+; ---------------- CAMERA (world auto-scroller) ----------------
+; The camera is its OWN node now (not a child of the Player). camera.gd
+; slides it right at a constant speed, which is what scrolls the world.
+; limit_top/limit_bottom lock the vertical view to world Y 0..720, so the
+; floor stays pinned to the bottom of the screen. It starts centred at
+; (640, 360) so the very first view is world X 0..1280, Y 0..720.
+[node name="Camera" type="Camera2D" parent="."]
+position = Vector2(640, 360)
+limit_top = 0
+limit_bottom = 720
+script = ExtResource("7_camera")
+
+; ---------------- OBSTACLE SPAWNER ----------------
+; A plain Node2D that runs spawner.gd. It has no visuals itself - its job
+; is just to drop asteroid copies into the world as the Moki flies.
+[node name="ObstacleSpawner" type="Node2D" parent="."]
+script = ExtResource("4_spawner")
+obstacle_scene = ExtResource("3_obstacle")
+vertical_laser_scene = ExtResource("5_vlaser")
+horizontal_laser_scene = ExtResource("6_hlaser")
+coin_scene = ExtResource("9_coin")
+powerup_scene = ExtResource("10_powerup")
+beam_obstacle_scene = ExtResource("11_beam")
+ring_scene = ExtResource("12_ring")
+missile_scene = ExtResource("13_missile")
+cave_wall_scene = ExtResource("14_cavewall")
+
+; ---------------- HUD (score + game over) ----------------
+; A CanvasLayer draws in screen space (stays put as the world scrolls).
+; process_mode = 3 is "Always", so it keeps running while the game is
+; paused on the game-over screen - that is how it catches the retry key.
+[node name="HUD" type="CanvasLayer" parent="."]
+process_mode = 3
+script = ExtResource("8_hud")
+
+[node name="DistanceLabel" type="Label" parent="HUD"]
+offset_left = 24.0
+offset_top = 16.0
+offset_right = 360.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 30
+text = "Distance: 0 m"
+
+[node name="MultLabel" type="Label" parent="HUD"]
+offset_left = 24.0
+offset_top = 54.0
+offset_right = 360.0
+offset_bottom = 82.0
+theme_override_font_sizes/font_size = 20
+text = "Multiplier: x1.0"
+
+[node name="CoinLabel" type="Label" parent="HUD"]
+offset_left = 24.0
+offset_top = 80.0
+offset_right = 360.0
+offset_bottom = 108.0
+theme_override_font_sizes/font_size = 20
+text = "Coins: 0"
+
+[node name="BestLabel" type="Label" parent="HUD"]
+offset_left = 24.0
+offset_top = 106.0
+offset_right = 360.0
+offset_bottom = 138.0
+theme_override_font_sizes/font_size = 20
+text = "Best: 0 m"
+
+[node name="PowerupLabel" type="Label" parent="HUD"]
+offset_left = 24.0
+offset_top = 140.0
+offset_right = 600.0
+offset_bottom = 168.0
+theme_override_colors/font_color = Color(0.7, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = ""
+
+; Centred flash banner (laser frenzy warnings, "complete!", etc.). White
+; base colour so the script's modulate sets the tint.
+[node name="BannerLabel" type="Label" parent="HUD"]
+visible = false
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -320.0
+offset_top = 28.0
+offset_right = 320.0
+offset_bottom = 84.0
+theme_override_font_sizes/font_size = 40
+text = ""
+horizontal_alignment = 1
+
+; Survival countdown shown during a laser frenzy (under the banner).
+[node name="SurvivalLabel" type="Label" parent="HUD"]
+visible = false
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -160.0
+offset_top = 92.0
+offset_right = 160.0
+offset_bottom = 132.0
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 28
+text = ""
+horizontal_alignment = 1
+
+; The game-over overlay. Starts hidden; hud.gd reveals it on a crash.
+; A full-screen Control holding a dim layer and centred text.
+[node name="GameOverPanel" type="Control" parent="HUD"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Dim" type="ColorRect" parent="HUD/GameOverPanel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.6)
+
+[node name="Center" type="CenterContainer" parent="HUD/GameOverPanel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="VBox" type="VBoxContainer" parent="HUD/GameOverPanel/Center"]
+theme_override_constants/separation = 18
+
+[node name="Title" type="Label" parent="HUD/GameOverPanel/Center/VBox"]
+theme_override_font_sizes/font_size = 56
+text = "YOU CRASHED!"
+horizontal_alignment = 1
+
+[node name="FinalLabel" type="Label" parent="HUD/GameOverPanel/Center/VBox"]
+theme_override_font_sizes/font_size = 26
+text = "Score: 0"
+horizontal_alignment = 1

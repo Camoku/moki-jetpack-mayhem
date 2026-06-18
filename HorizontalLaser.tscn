@@ -1,0 +1,19 @@
+; ==========================================================
+;  HorizontalLaser.tscn - a full-width sweeping beam
+; ==========================================================
+;  horizontal_laser.gd sizes and drives these pieces:
+;    CollisionShape2D <- the deadly box
+;    Beam             <- the red visual
+; ==========================================================
+
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://horizontal_laser.gd" id="1_hl"]
+
+[node name="HorizontalLaser" type="Area2D"]
+script = ExtResource("1_hl")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+
+[node name="Beam" type="ColorRect" parent="."]
+color = Color(1, 0.3, 0.25, 1)

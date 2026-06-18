@@ -1,0 +1,27 @@
+; ==========================================================
+;  BeamObstacle.tscn - a floating laser bar between two blocks
+; ==========================================================
+;  beam_obstacle.gd builds these pieces into a horizontal or vertical
+;  capped beam, sized in code:
+;    CollisionShape2D <- the deadly box (covers the whole bar)
+;    Beam             <- the red laser line
+;    Cap1 / Cap2      <- the grey blocks on each end
+; ==========================================================
+
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://beam_obstacle.gd" id="1_beam"]
+
+[node name="BeamObstacle" type="Area2D"]
+script = ExtResource("1_beam")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+
+[node name="Beam" type="ColorRect" parent="."]
+color = Color(1, 0.3, 0.25, 1)
+
+[node name="Cap1" type="ColorRect" parent="."]
+color = Color(0.55, 0.57, 0.62, 1)
+
+[node name="Cap2" type="ColorRect" parent="."]
+color = Color(0.55, 0.57, 0.62, 1)

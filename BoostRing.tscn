@@ -1,0 +1,48 @@
+; ==========================================================
+;  BoostRing.tscn - fly through it for a speed boost
+; ==========================================================
+;  A square "ring" made of four glowing bars (visual only). The
+;  CollisionShape2D is the OPENING in the middle, so you trigger it by
+;  flying through the centre. Not a hazard - the bars never hurt you.
+; ==========================================================
+
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ring.gd" id="1_ring"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ring"]
+size = Vector2(70, 70)
+
+[node name="BoostRing" type="Area2D"]
+script = ExtResource("1_ring")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_ring")
+
+[node name="Top" type="ColorRect" parent="."]
+offset_left = -48.0
+offset_top = -48.0
+offset_right = 48.0
+offset_bottom = -36.0
+color = Color(0.3, 1, 0.75, 1)
+
+[node name="Bottom" type="ColorRect" parent="."]
+offset_left = -48.0
+offset_top = 36.0
+offset_right = 48.0
+offset_bottom = 48.0
+color = Color(0.3, 1, 0.75, 1)
+
+[node name="Left" type="ColorRect" parent="."]
+offset_left = -48.0
+offset_top = -48.0
+offset_right = -36.0
+offset_bottom = 48.0
+color = Color(0.3, 1, 0.75, 1)
+
+[node name="Right" type="ColorRect" parent="."]
+offset_left = 36.0
+offset_top = -48.0
+offset_right = 48.0
+offset_bottom = 48.0
+color = Color(0.3, 1, 0.75, 1)

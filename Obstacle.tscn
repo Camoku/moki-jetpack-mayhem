@@ -1,0 +1,40 @@
+; ==========================================================
+;  Obstacle.tscn - one reusable asteroid
+; ==========================================================
+;  The spawner makes copies of this scene at runtime.
+;
+;  Tree:
+;    Obstacle (Area2D)        <- the detector, runs obstacle.gd
+;    +-- CollisionShape2D     <- the area's shape (56x56 box)
+;    +-- Rock   (ColorRect)   <- the asteroid body
+;    +-- Crater (ColorRect)   <- a little darker detail for charm
+; ==========================================================
+
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://obstacle.gd" id="1_obs"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_rock"]
+size = Vector2(56, 56)
+
+[node name="Obstacle" type="Area2D"]
+script = ExtResource("1_obs")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_rock")
+
+; ColorRects are positioned from their top-left, so we offset by half the
+; size (-28..28) to centre the asteroid on the Area2D's origin.
+[node name="Rock" type="ColorRect" parent="."]
+offset_left = -28.0
+offset_top = -28.0
+offset_right = 28.0
+offset_bottom = 28.0
+color = Color(0.5, 0.42, 0.36, 1)
+
+[node name="Crater" type="ColorRect" parent="."]
+offset_left = -8.0
+offset_top = -14.0
+offset_right = 6.0
+offset_bottom = 0.0
+color = Color(0.38, 0.31, 0.27, 1)
