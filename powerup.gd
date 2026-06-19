@@ -16,6 +16,9 @@ var camera: Node2D
 
 @onready var box: ColorRect = $Box
 @onready var label: Label = $Label
+@onready var sprite: AnimatedSprite2D = $Sprite
+@onready var backing: Sprite2D = $Backing
+@onready var glow: PointLight2D = $Glow
 
 
 func _ready() -> void:
@@ -31,8 +34,14 @@ func _apply_look() -> void:
 			box.color = Color(0.3, 0.7, 1.0, 1.0)
 			label.text = "S"
 		"magnet":
-			box.color = Color(0.8, 0.4, 1.0, 1.0)
-			label.text = "M"
+			# Real animated art: show the shimmering magnet sprite instead of the
+			# coloured letter badge.
+			box.visible = false
+			label.visible = false
+			backing.visible = true   # dark disc so the green magnet pops on the green city
+			glow.visible = true      # + a green glow halo for extra pop
+			sprite.visible = true
+			sprite.play("shimmer")
 		"doubler":
 			box.color = Color(1.0, 0.82, 0.2, 1.0)
 			label.text = "x2"

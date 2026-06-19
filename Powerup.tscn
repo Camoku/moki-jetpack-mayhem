@@ -12,12 +12,40 @@
 ;    +-- Label            <- the icon letter (e.g. "S" for Shield)
 ; ==========================================================
 
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://powerup.gd" id="1_pu"]
+[ext_resource type="SpriteFrames" path="res://sprites/powerups/magnet_frames.tres" id="2_magnet"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pu"]
 size = Vector2(46, 46)
+
+; A soft dark disc that sits BEHIND a sprite powerup so it pops against busy /
+; same-colour backgrounds (the green magnet was getting lost on the green city).
+[sub_resource type="Gradient" id="Gradient_halo"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(0.01, 0.02, 0.06, 0.94, 0.01, 0.02, 0.06, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_halo"]
+gradient = SubResource("Gradient_halo")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+; A white radial used as the LIGHT texture for the magnet's green glow halo.
+[sub_resource type="Gradient" id="Gradient_glowlight"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GlowTex_light"]
+gradient = SubResource("Gradient_glowlight")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
 
 [node name="Powerup" type="Area2D"]
 script = ExtResource("1_pu")
@@ -42,3 +70,33 @@ theme_override_font_sizes/font_size = 28
 text = "S"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+; Real animated art, used INSTEAD of the coloured badge for types that have a
+; sprite (just the Magnet for now). Hidden by default; powerup.gd shows + plays it
+; for "magnet" and hides the Box/Label. Pixel art -> Nearest; ~0.09 scale brings the
+; 584px frame down to a ~52px badge.
+; Dark contrast disc behind the magnet (shown with it). Drawn before Sprite so it
+; sits underneath.
+[node name="Backing" type="Sprite2D" parent="."]
+visible = false
+texture = SubResource("GradientTexture2D_halo")
+scale = Vector2(0.72, 0.72)
+
+; A green glow halo (a real additive 2D light) so the magnet reads as a glowing
+; powerup and pops off the background. Shown with the magnet.
+[node name="Glow" type="PointLight2D" parent="."]
+visible = false
+color = Color(0.4, 1, 0.7, 1)
+energy = 1.1
+texture = SubResource("GlowTex_light")
+texture_scale = 0.75
+
+; light_mask = 2 keeps the green Glow (which lights layer 1) from tinting the magnet
+; itself - so the halo glows on the disc/background but the magnet keeps its true colour.
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+visible = false
+light_mask = 2
+texture_filter = 1
+scale = Vector2(0.16, 0.16)
+sprite_frames = ExtResource("2_magnet")
+animation = &"shimmer"

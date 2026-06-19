@@ -300,9 +300,18 @@ Real art lives in `res://sprites/`. We slice/play it with **`AnimatedSprite2D` +
   (`vertical_laser`/`cave_wall` `area_bottom`, `bounce_orb` `bounce_bottom`) were nudged to match.
   (The old starfield layers are still in the scene but hidden behind the opaque city.)
 
+- **Magnet powerup** — `sprites/powerups/magnet.png` (a 2×2 grid of 4 shimmer frames) →
+  `magnet_frames.tres` (anim `shimmer`). `Powerup.tscn` is still "one scene, a `type` styles
+  it": most powerups are coloured letter badges, but `powerup.gd`'s `magnet` case hides the
+  badge and shows an `AnimatedSprite2D` instead, plus a dark contrast **disc** (`Backing`) and a
+  green **glow** (`PointLight2D`) so it pops off the green city. The magnet sprite's
+  `light_mask = 2` keeps the glow from tinting the magnet itself (the halo only lights the
+  disc/background). The source file was a JPEG with a baked checkerboard "transparency", so the
+  gray background was keyed out to real alpha before import.
+
 Adding more art later follows the same recipe: drop PNGs in `res://sprites/`, set the filter,
 build a `SpriteFrames` (or just a `Sprite2D` for a single image), point a node at it. Beams,
-lasers, powerups, the HUD, and bosses are still placeholder rectangles.
+lasers, the other powerups, the HUD, and bosses are still placeholder rectangles.
 
 ---
 

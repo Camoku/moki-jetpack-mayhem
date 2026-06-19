@@ -1,0 +1,41 @@
+; SpriteFrames for the Magnet powerup, sliced from magnet.png (a 2x2 grid of 4
+; shimmer frames, each 392x584). One looping animation, "shimmer".
+[gd_resource type="SpriteFrames" load_steps=6 format=3 uid="uid://b8magnetframes01"]
+
+[ext_resource type="Texture2D" uid="uid://cvdralaga6mau" path="res://sprites/powerups/magnet.png" id="1"]
+
+[sub_resource type="AtlasTexture" id="m0"]
+atlas = ExtResource("1")
+region = Rect2(0, 0, 392, 584)
+
+[sub_resource type="AtlasTexture" id="m1"]
+atlas = ExtResource("1")
+region = Rect2(392, 0, 392, 584)
+
+[sub_resource type="AtlasTexture" id="m2"]
+atlas = ExtResource("1")
+region = Rect2(0, 584, 392, 584)
+
+[sub_resource type="AtlasTexture" id="m3"]
+atlas = ExtResource("1")
+region = Rect2(392, 584, 392, 584)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("m0")
+}, {
+"duration": 1.0,
+"texture": SubResource("m1")
+}, {
+"duration": 1.0,
+"texture": SubResource("m2")
+}, {
+"duration": 1.0,
+"texture": SubResource("m3")
+}],
+"loop": true,
+"name": &"shimmer",
+"speed": 6.0
+}]
