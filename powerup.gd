@@ -37,6 +37,7 @@ const SPRITE_ART := {
 	"doubler": {"frames": "res://sprites/powerups/x2_frames.tres", "anim": "idle", "glow": Color(0.5, 1.0, 0.45), "scale": 0.17},
 	"shield": {"frames": "res://sprites/powerups/shield_frames.tres", "anim": "idle", "glow": Color(0.5, 1.0, 0.65), "scale": 0.08},
 	"tiny": {"frames": "res://sprites/powerups/shrink_frames.tres", "anim": "idle", "glow": Color(0.5, 1.0, 0.55), "scale": 0.12},
+	"dash": {"frames": "res://sprites/powerups/dash_frames.tres", "anim": "idle", "glow": Color(0.55, 1.0, 0.45), "scale": 0.5},
 }
 
 
@@ -60,9 +61,6 @@ func _apply_look() -> void:
 		"ghost":
 			box.color = Color(0.85, 0.9, 1.0, 1.0)
 			label.text = "G"
-		"dash":
-			box.color = Color(1.0, 0.5, 0.2, 1.0)
-			label.text = ">>"
 		"secondchance":
 			box.color = Color(1.0, 0.4, 0.6, 1.0)
 			label.text = "+1"

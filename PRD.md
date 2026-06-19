@@ -116,7 +116,7 @@ playtesting in places (noted per item).
       **spinning coins** (6-frame 32×32 sheet, desynced), **asteroids** (rock sprite +
       random tumble; also Storm meteors / Golem boss), and a **parallax city background +
       scrolling tech floor** (mirror-doubled seamless tiles; floor raised for a better view,
-      with `floor_y`/spawn-limits/hazard-floors realigned), and the **Magnet + Doubler + Shield + Tiny powerups**
+      with `floor_y`/spawn-limits/hazard-floors realigned), and the **Magnet + Doubler + Shield + Tiny + Dash powerups**
       (data-driven `SPRITE_ART`: sprite + dark disc + glow to pop). Still rectangles: beams, lasers,
       the other powerups, bosses' bodies, HUD. (Art lives in `res://sprites/`; see README "Art & animation".)
 - [ ] **Disk-persist owned upgrades** (part of store, but call it out)

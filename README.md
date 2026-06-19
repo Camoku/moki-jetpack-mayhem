@@ -300,15 +300,16 @@ Real art lives in `res://sprites/`. We slice/play it with **`AnimatedSprite2D` +
   (`vertical_laser`/`cave_wall` `area_bottom`, `bounce_orb` `bounce_bottom`) were nudged to match.
   (The old starfield layers are still in the scene but hidden behind the opaque city.)
 
-- **Powerup art (Magnet, Doubler, Shield, Tiny)** — `sprites/powerups/`. `Powerup.tscn` is still "one scene,
+- **Powerup art (Magnet, Doubler, Shield, Tiny, Dash)** — `sprites/powerups/`. `Powerup.tscn` is still "one scene,
   a `type` styles it": most powerups are coloured letter badges, but a type listed in
   `powerup.gd`'s **`SPRITE_ART`** table (data-driven: SpriteFrames + anim + glow colour + scale)
   hides the badge and shows the art on an `AnimatedSprite2D`, plus a dark contrast **disc**
   (`Backing`) and a **glow** (`PointLight2D`) so it pops off the green city. The sprite's
   `light_mask = 2` keeps the glow from tinting the art itself (the halo only lights the
   disc/background). **Magnet** = `magnet_frames.tres` (4-frame `shimmer`); **Doubler** =
-  `x2_frames.tres` (a single static `idle` icon); **Shield** = `shield_frames.tres` and **Tiny** =
-  `shrink_frames.tres` (both static `idle`). Adding more powerup art = one row in `SPRITE_ART`. (The source files were JPEGs with a
+  `x2_frames.tres` (a single static `idle` icon); **Shield**, **Tiny**, and **Dash** =
+  `shield_frames.tres` / `shrink_frames.tres` / `dash_frames.tres` (static `idle` icons - the Dash
+  one is an arrow chosen from a sheet of options). Adding more powerup art = one row in `SPRITE_ART`. (The source files were JPEGs with a
   baked checkerboard "transparency": the magnet's gray was keyed out by colour; the x2 and shield
   have white details to keep, so their backgrounds were removed by a **flood-fill from the image
   edges** instead.)
