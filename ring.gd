@@ -50,12 +50,7 @@ func _on_body_entered(body: Node) -> void:
 				cam.shake(5.0)         # a small kick as you punch through
 		if from_highway:
 			_notify_resolved(true)   # tell the highway we got this one
-		else:
-			# Normal rings flash feedback; highway rings stay quiet (the event
-			# has its own banner).
-			var hud := get_tree().get_first_node_in_group("hud")
-			if hud != null:
-				hud.show_banner("SPEED BOOST!", Color(0.4, 1.0, 0.8), 1.2)
+		# (No banner - the pop/burst + speed-trail are feedback enough.)
 		# Moki gets a short aqua speed-trail whoosh as he blasts through (a cooler
 		# tint than the Dash powerup's lime, so the two read as related but distinct).
 		if body.has_method("speed_trail"):
