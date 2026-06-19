@@ -1,16 +1,19 @@
 ; ==========================================================
-;  Drone.tscn - a small homing enemy
+;  Drone.tscn - a small homing enemy (a green homing MISSILE)
 ; ==========================================================
 ;  Tree:
 ;    Drone (Area2D)           <- detector, runs drone.gd
-;    +-- CollisionShape2D     <- 34x28 hit box
-;    +-- Body (ColorRect)     <- the red drone shell
-;    +-- Eye  (ColorRect)     <- a glowing eye (charm + reads as "enemy")
+;    +-- CollisionShape2D     <- 34x28 hit box (the lethal body; nose/flame
+;                                extend past it harmlessly)
+;    +-- Sprite (AnimatedSprite2D) <- the missile art, flame flickering, nose
+;                                left (its travel direction); drone.gd tilts it
+;                                toward whoever it is tracking.
 ; ==========================================================
 
 [gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://drone.gd" id="1_drone"]
+[ext_resource type="SpriteFrames" path="res://sprites/hazards/homing_missile_frames.tres" id="2_frames"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_drone"]
 size = Vector2(34, 28)
@@ -21,16 +24,9 @@ script = ExtResource("1_drone")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_drone")
 
-[node name="Body" type="ColorRect" parent="."]
-offset_left = -17.0
-offset_top = -14.0
-offset_right = 17.0
-offset_bottom = 14.0
-color = Color(0.75, 0.2, 0.25, 1)
-
-[node name="Eye" type="ColorRect" parent="."]
-offset_left = -3.0
-offset_top = -5.0
-offset_right = 9.0
-offset_bottom = 5.0
-color = Color(1, 0.85, 0.3, 1)
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = ExtResource("2_frames")
+animation = &"fly"
+offset = Vector2(8, -1)
+scale = Vector2(0.22, 0.22)

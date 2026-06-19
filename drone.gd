@@ -20,10 +20,13 @@ var camera: Node2D
 var player: Node2D
 var _committed: bool = false   # true once we have passed the player (stop homing)
 
+@onready var sprite: AnimatedSprite2D = $Sprite
+
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	add_to_group("asteroid")   # generic persistent-hazard group (cap + coin clearance)
+	sprite.play("fly")         # flickering exhaust
 
 
 func clear_radius() -> float:
@@ -46,6 +49,7 @@ func _process(delta: float) -> void:
 
 	# Slowly home toward the Moki's height - but only until we have drifted
 	# past them, after which we commit and stop tracking (no camping).
+	var vy: float = 0.0
 	if player != null and not _committed:
 		if global_position.x <= player.global_position.x:
 			_committed = true
@@ -53,6 +57,15 @@ func _process(delta: float) -> void:
 			var dy: float = player.global_position.y - global_position.y
 			var step: float = clamp(dy, -home_speed * delta, home_speed * delta)
 			position.y += step
+			vy = step / delta
+
+	# Tilt the nose toward where it is tracking (the art points LEFT at rest, so
+	# a small rotation against its leftward speed noses it up/down = "seeking").
+	var vx_mag: float = extra_speed
+	if camera != null and camera.has_method("current_speed"):
+		vx_mag += camera.current_speed()
+	var target_tilt: float = clamp(-vy / maxf(vx_mag, 1.0), -0.35, 0.35)
+	sprite.rotation = lerpf(sprite.rotation, target_tilt, 0.12)
 
 	if camera != null and global_position.x < camera.global_position.x - cleanup_behind:
 		queue_free()

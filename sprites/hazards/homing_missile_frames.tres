@@ -1,0 +1,53 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://sprites/hazards/homing_missile.png" id="1"]
+
+[sub_resource type="AtlasTexture" id="h0"]
+atlas = ExtResource("1")
+region = Rect2(0, 0, 343, 133)
+
+[sub_resource type="AtlasTexture" id="h1"]
+atlas = ExtResource("1")
+region = Rect2(343, 0, 343, 133)
+
+[sub_resource type="AtlasTexture" id="h2"]
+atlas = ExtResource("1")
+region = Rect2(686, 0, 343, 133)
+
+[sub_resource type="AtlasTexture" id="h3"]
+atlas = ExtResource("1")
+region = Rect2(1029, 0, 343, 133)
+
+[sub_resource type="AtlasTexture" id="h4"]
+atlas = ExtResource("1")
+region = Rect2(1372, 0, 343, 133)
+
+[sub_resource type="AtlasTexture" id="h5"]
+atlas = ExtResource("1")
+region = Rect2(1715, 0, 343, 133)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("h0")
+}, {
+"duration": 1.0,
+"texture": SubResource("h1")
+}, {
+"duration": 1.0,
+"texture": SubResource("h2")
+}, {
+"duration": 1.0,
+"texture": SubResource("h3")
+}, {
+"duration": 1.0,
+"texture": SubResource("h4")
+}, {
+"duration": 1.0,
+"texture": SubResource("h5")
+}],
+"loop": true,
+"name": &"fly",
+"speed": 14.0
+}]
