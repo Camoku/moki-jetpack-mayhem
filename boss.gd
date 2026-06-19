@@ -63,7 +63,7 @@ var _hit_cd: float = 0.0     # cooldown left before the core can be hit again
 var _pulse: float = 0.0      # drives the exposed-core glow pulse
 var _last_pattern: String = ""
 var _last_formation: String = ""  # previous frenzy formation, so the main boss doesn't repeat it
-var _main_attack_index: int = 0   # round-robins the main boss through its three attacks
+var _last_main: String = ""   # the DREADNOUGHT's previous primary attack, so it never repeats
 var _core_vulnerable: bool = false
 var _flash_t: float = 0.0    # brief white flash on the cannon body when the core is hit
 var _shake_t: float = 0.0    # transient body-shake timer (fire / hit / death)
@@ -108,6 +108,12 @@ const ART := {
 		"pos": Vector2(0, 45),
 		"core": Vector2(-14, 63),
 	},
+	"main": {
+		"tex": preload("res://sprites/bosses/dreadnought.png"),   # flipped upside-down to hang from the ceiling
+		"scale": Vector2(0.55, 0.42),   # the biggest boss
+		"pos": Vector2(0, 48),
+		"core": Vector2(0, 76),
+	},
 }
 
 # Explosion spark-bursts reused for a boss's death (world-space pops).
@@ -141,14 +147,11 @@ func _configure_for_kind() -> void:
 			overheat_time = 2.8     # ...then a calmer window to fly in and hit the core
 		"main":
 			boss_name = "DREADNOUGHT"
-			max_hp = 8
-			max_time = 52.0
-			attack_time = 3.0   # room for a full frenzy formation to charge + fire before overheat
-			housing.color = Color(0.5, 0.12, 0.14, 1.0)    # menacing red
-			# A wider hull so the main boss reads as bigger.
-			housing.offset_left = -180.0
-			housing.offset_right = 180.0
-			housing.offset_bottom = 84.0
+			max_hp = 10
+			max_time = 58.0
+			attack_time = 4.0   # a long window: a combo on entry PLUS repeated layered attacks...
+			overheat_time = 3.0 # ...then a fair window to reach the core
+			_apply_art("main")  # real art (the placeholder rects are hidden)
 		_:
 			boss_name = "LASER CANNON"
 			_apply_art("cannon")
@@ -201,7 +204,7 @@ func _process(delta: float) -> void:
 		State.INTRO:
 			if _t >= intro_time:
 				if camera != null:
-					camera.shake(10.0)   # arrival slam as it locks into place
+					camera.shake(20.0 if kind == "main" else 10.0)   # the DREADNOUGHT lands much harder
 				_enter_attack()
 		State.ATTACK:
 			# The attack fired on entry. The frigate keeps lobbing fresh volleys
@@ -216,6 +219,12 @@ func _process(delta: float) -> void:
 				if _volley_cd <= 0.0:
 					_volley_cd = golem_wave_interval
 					_attack_meteors()
+			elif kind == "main" and _last_main != "frenzy" and _t < attack_time - 1.9:
+				# DREADNOUGHT keeps layering fresh attacks through the window.
+				_volley_cd -= delta
+				if _volley_cd <= 0.0:
+					_volley_cd = 1.7
+					_attack_main_extra()
 			if _t >= attack_time:
 				_enter_overheat()
 		State.OVERHEAT:
@@ -223,13 +232,16 @@ func _process(delta: float) -> void:
 			if _t >= overheat_time:
 				_enter_attack()
 		State.DYING:
-			# Rapid-fire explosion pops all over the body while it blows up.
+			# Rapid-fire explosion pops all over the body while it blows up. The
+			# DREADNOUGHT goes out bigger: wider, faster, longer.
+			var epic := kind == "main"
 			_die_burst_cd -= delta
-			if _die_burst_cd <= 0.0 and _t < 0.7:
-				_die_burst_cd = 0.09
-				var off := Vector2(randf_range(-130.0, 130.0), randf_range(-30.0, 110.0))
-				_spawn_burst(off, DEATH_COLORS[randi() % DEATH_COLORS.size()], randf() < 0.5)
-			if _t >= 0.85:
+			if _die_burst_cd <= 0.0 and _t < (0.95 if epic else 0.7):
+				_die_burst_cd = 0.06 if epic else 0.09
+				var rx: float = 220.0 if epic else 130.0
+				var off := Vector2(randf_range(-rx, rx), randf_range(-40.0, 130.0))
+				_spawn_burst(off, DEATH_COLORS[randi() % DEATH_COLORS.size()], epic or randf() < 0.5)
+			if _t >= (1.15 if epic else 0.85):
 				queue_free()
 		State.RETREAT:
 			if _t >= 0.7:
@@ -259,6 +271,7 @@ func _process(delta: float) -> void:
 		if _fire_flash > 0.0:
 			_fire_flash -= delta
 			glow_a = maxf(glow_a, (_fire_flash / 0.2) * 0.85)
+		glow_a += (1.0 - float(hp) / float(max_hp)) * 0.13   # glows hotter (enraged) as it's worn down
 		body_glow.modulate.a = glow_a
 
 		if state == State.DYING:
@@ -287,7 +300,9 @@ func _process(delta: float) -> void:
 func _enter_attack() -> void:
 	state = State.ATTACK
 	_t = 0.0
-	_volley_cd = frigate_volley_interval if kind == "frigate" else golem_wave_interval   # next extra volley/wave
+	# Time until the next extra volley/wave. The DREADNOUGHT waits longer so its
+	# layered attack lands AFTER the opening combo has started to clear (less pile-up).
+	_volley_cd = 1.9 if kind == "main" else (frigate_volley_interval if kind == "frigate" else golem_wave_interval)
 	_set_core_vulnerable(false)
 	_report_health()   # (re)show the HP bar now the fight is underway
 	_fire_pattern()
@@ -319,11 +334,19 @@ func _die() -> void:
 	housing.color = Color(1.0, 0.85, 0.4, 1.0)   # flash bright as it blows (other kinds)
 	body_sprite.modulate = Color(2.2, 2.2, 2.2, 1.0)    # the cannon sprite flares bright
 	# Kick off the explosion: a big central pop, a hard rattle and a heavy screen shake.
+	# The DREADNOUGHT detonates harder - extra bursts and a white screen flash.
+	var epic := kind == "main"
 	_die_burst_cd = 0.0
-	_shake_body(8.0, 0.85)
+	_shake_body(12.0 if epic else 8.0, 0.95 if epic else 0.85)
 	_spawn_burst(Vector2(0, 40), Color(1, 0.95, 0.6), true)
 	if camera != null:
-		camera.shake(16.0)
+		camera.shake(26.0 if epic else 16.0)
+	if epic:
+		for i in 5:
+			_spawn_burst(Vector2(randf_range(-200.0, 200.0), randf_range(-30.0, 90.0)), DEATH_COLORS[randi() % DEATH_COLORS.size()], true)
+		var hud := get_tree().get_first_node_in_group("hud")
+		if hud != null and hud.has_method("flash"):
+			hud.flash(Color(1.0, 0.95, 0.8, 0.7))
 	var sp := get_tree().get_first_node_in_group("spawner")
 	if sp != null and sp.has_method("boss_defeated"):
 		sp.boss_defeated(kind)
@@ -419,15 +442,45 @@ func _fire_pattern() -> void:
 		"golem":
 			_attack_meteors()
 		"main":
-			# The main boss rotates through its three signatures: the full Laser
-			# Frenzy walls, missile volleys, and meteor waves.
-			match _main_attack_index % 3:
-				0: _attack_frenzy()
-				1: _attack_missiles()
-				2: _attack_meteors()
-			_main_attack_index += 1
+			_attack_main_combo()
 		_:
 			_attack_beams()
+
+
+# The DREADNOUGHT mixes EVERY boss's attack: the Laser-Frenzy walls, the cannon's
+# beams, the frigate's missiles and the golem's meteors. It picks a primary (never
+# the same twice) and - unless that's the screen-filling frenzy - often layers a
+# second, different attack on top for a real combo.
+func _attack_main_combo() -> void:
+	var pool: Array[String] = ["frenzy", "beams", "missiles", "meteors"]
+	if pool.has(_last_main):
+		pool.erase(_last_main)
+	var primary: String = pool.pick_random()
+	_last_main = primary
+	_do_attack(primary)
+	# The screen-filling Frenzy plays solo (fair). Everything else OFTEN combos with
+	# a second attack for a mix of the bosses' kits (the repeated layering adds more).
+	if primary != "frenzy" and randf() < 0.45:
+		_do_attack(_light_attack())
+
+
+# A "light" (non-frenzy) attack used for combos + the repeated layered assault.
+func _light_attack() -> String:
+	return ["beams", "missiles", "meteors"].pick_random()
+
+
+# Fired repeatedly through the DREADNOUGHT's attack window (unless it opened with a
+# Frenzy) so the assault is sustained, not a single burst.
+func _attack_main_extra() -> void:
+	_do_attack(_light_attack())
+
+
+func _do_attack(which: String) -> void:
+	match which:
+		"frenzy": _attack_frenzy()
+		"beams": _attack_beams()
+		"missiles": _attack_missiles()
+		"meteors": _attack_meteors()
 
 
 # --- Beam attack (cannon) ---------------------------------------------------

@@ -164,9 +164,10 @@ Only a boss's **attack** is deadly — the housing is scenery and the core is *b
 pocket — power-scaled charge time); **frigate** = telegraphed missile volleys from **both edges**
 (it lobs a fresh volley every ~1.1s through the attack, then ceasefires before the core opens so
 you get a safe window to hit it); **golem** = repeated **meteor waves from both edges** (fast,
-some weaving up/down) on the same ceasefire-before-the-core rhythm; **main (DREADNOUGHT)**
-round-robins the **Laser-Frenzy walls** (vertical / horizontal / combined safe-pocket) + missiles
-+ meteors.
+some weaving up/down) on the same ceasefire-before-the-core rhythm; **main (DREADNOUGHT)** is the
+combo of **every** kit (10 HP) — each cycle it picks a primary (Frenzy / beams / missiles / meteors,
+never repeating), often layers a second on top, and keeps lobbing more through the window, while the
+screen-filling Frenzy always plays solo so it stays fair.
 
 Hitting a core **knocks the Moki back** off it (a brief, fading bounce) so the hit has weight, and
 the Moki always renders **above** the boss (and other hazards) so he never gets lost behind a sprite.
@@ -327,20 +328,21 @@ Real art lives in `res://sprites/`. We slice/play it with **`AnimatedSprite2D` +
   have white details to keep, so their backgrounds were removed by a **flood-fill from the image
   edges** instead.)
 
-**Bosses use real art** too, driven by a per-kind `ART` table in `boss.gd` (one row sets the
+**All four bosses use real art** now, driven by a per-kind `ART` table in `boss.gd` (one row sets the
 sprite, scale, position, and weak-point Core location): the **laser cannon**
 (`sprites/bosses/lasercannon.png`), the **missile frigate** (`sprites/bosses/missileboss.png`),
-and the **meteor golem** (`sprites/bosses/asteroidgolem.png`) so far; only the DREADNOUGHT keeps
-the placeholder `Housing` rect. Each art boss's lights
-**breathe** via an additive overlay (`Body/Glow`) that flares when it fires / overheats, reacts
-to every shot (flare + shudder + screen shake), spits **damage sparks** once it's low on HP, and
-**explodes** on death (spark bursts + strobe + screen shake). The full-screen **lasers are real
+the **meteor golem** (`sprites/bosses/asteroidgolem.png`), and the **DREADNOUGHT**
+(`sprites/bosses/dreadnought.png`, flipped upside-down to hang from the ceiling). Each art boss's lights
+**breathe** via an additive overlay (`Body/Glow`) that flares when it fires / overheats, glow **hotter
+the more wounded** they get, react to every shot (flare + shudder + screen shake), spit **damage
+sparks** once low on HP, and **explode** on death (spark bursts + strobe + screen shake — the
+DREADNOUGHT's is bigger/longer with a screen flash). The full-screen **lasers are real
 too** — a red crackling beam (`lazer_beam_red*`, made by channel-swapping the green floating-beam
 art). (The frigate sprite's wide back-wings were **feathered** to transparent at the sides so they
 fade out instead of ending on a hard cut.)
 
-Adding a boss's art later = one row in the `ART` table. The other powerups, the HUD, and the
-DREADNOUGHT boss body are still placeholder rectangles.
+All four bosses are now arted. The remaining placeholder rectangles are some of the powerups and
+the HUD.
 
 ---
 
