@@ -61,9 +61,9 @@ Main (Node2D)
 | `HorizontalLaser.tscn` / `horizontal_laser.gd` | Solid full-width laser, charge→fire |
 | `BeamObstacle.tscn` / `beam_obstacle.gd` | Floating capped laser bar — metal caps + an **animated crackling** green beam (H or V, varied sizes) |
 | `Missile.tscn` / `missile.gd` | Warns ("!") at the right edge, then strikes left — animated missile (flickering exhaust) with a pulsing red danger glow |
-| `CaveWall.tscn` / `cave_wall.gd` | One tunnel slice (top+bottom walls + gap) for the Cave event |
+| `CaveWall.tscn` / `cave_wall.gd` | One tunnel slice (top+bottom walls + gap) for the Cave event — tiled tech-panel texture |
 | `BounceOrb.tscn` / `bounce_orb.gd` | Ball that drifts left while bouncing roof↔floor (a zig-zag) |
-| `Crusher.tscn` / `crusher.gd` | A gate whose two blocks slam open/shut on a cycle — time the gap |
+| `Crusher.tscn` / `crusher.gd` | A gate whose two blocks slam open/shut on a cycle — time the gap; tiled tech-panel (green-glow) texture |
 | `Drone.tscn` / `drone.gd` | Small enemy that slowly homes your height, then commits once it passes |
 | `Boss.tscn` / `boss.gd` | Every boss (one scene, `kind` picks which); reuses the hazards as its attacks |
 

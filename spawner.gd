@@ -158,8 +158,8 @@ extends Node2D
 @export var cave_center: float = 325.0         # Middle height the gap snakes around.
 @export var cave_amplitude: float = 120.0      # How far the gap snakes up/down (gentler now).
 @export var cave_wave_speed: float = 0.15      # Tunnel curve per slice (radians; gentler slope).
-@export var cave_gap_early: float = 260.0      # Gap height early on...
-@export var cave_gap_deep: float = 210.0       # ...and once ramped (still roomy).
+@export var cave_gap_early: float = 232.0      # Gap height early on...
+@export var cave_gap_deep: float = 186.0       # ...and once ramped (still roomy).
 
 # --- Blackout (event: the lights go out - only coins/hazards glow) ---
 @export var blackout_duration: float = 7.0     # How long the lights stay out.

@@ -1,17 +1,19 @@
 ; ==========================================================
 ;  CaveWall.tscn - one vertical slice of the cave tunnel
 ; ==========================================================
-;  cave_wall.gd builds a top and bottom rock wall with a gap between
-;  them. The spawner streams many of these close together, with the
-;  gap snaking up and down, to form a continuous winding tunnel.
+;  cave_wall.gd builds a top and bottom wall with a gap between them.
+;  The spawner streams many of these close together, with the gap snaking
+;  up and down, to form a continuous winding tunnel. The walls are
+;  TextureRects tiling the green tech-panel tile (shared with the crusher).
 ;
 ;    TopShape / BottomShape   <- collision for the two wall blocks
-;    TopWall  / BottomWall     <- the rock visuals
+;    TopWall  / BottomWall     <- the wall visuals (tiled tech texture)
 ; ==========================================================
 
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://cave_wall.gd" id="1_cw"]
+[ext_resource type="Texture2D" uid="uid://b3mleqq70w7n3" path="res://sprites/hazards/crusher_tex.png" id="2_tex"]
 
 [node name="CaveWall" type="Area2D"]
 script = ExtResource("1_cw")
@@ -20,8 +22,14 @@ script = ExtResource("1_cw")
 
 [node name="BottomShape" type="CollisionShape2D" parent="."]
 
-[node name="TopWall" type="ColorRect" parent="."]
-color = Color(0.42, 0.39, 0.46, 1)
+[node name="TopWall" type="TextureRect" parent="."]
+texture_filter = 1
+texture = ExtResource("2_tex")
+expand_mode = 1
+stretch_mode = 1
 
-[node name="BottomWall" type="ColorRect" parent="."]
-color = Color(0.42, 0.39, 0.46, 1)
+[node name="BottomWall" type="TextureRect" parent="."]
+texture_filter = 1
+texture = ExtResource("2_tex")
+expand_mode = 1
+stretch_mode = 1

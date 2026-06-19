@@ -19,8 +19,8 @@ var camera: Node2D
 
 @onready var top_shape: CollisionShape2D = $TopShape
 @onready var bottom_shape: CollisionShape2D = $BottomShape
-@onready var top_wall: ColorRect = $TopWall
-@onready var bottom_wall: ColorRect = $BottomWall
+@onready var top_wall: TextureRect = $TopWall
+@onready var bottom_wall: TextureRect = $BottomWall
 
 
 func _ready() -> void:
