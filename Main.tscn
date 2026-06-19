@@ -55,10 +55,10 @@ script = ExtResource("15_darkness")
 motion_scale = Vector2(0, 0)
 
 [node name="Space" type="ColorRect" parent="Background/SpaceLayer" unique_id=1676263828]
-offset_left = -345.0
-offset_top = -296.0
-offset_right = 1335.0
-offset_bottom = 824.0
+offset_left = -416.0
+offset_top = -274.0
+offset_right = 1264.0
+offset_bottom = 846.0
 color = Color(0.02, 0.02, 0.06, 1)
 script = ExtResource("2_bg")
 

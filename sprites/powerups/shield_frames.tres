@@ -1,5 +1,4 @@
-; SpriteFrames for the Shield powerup - a single static frame ("idle").
-[gd_resource type="SpriteFrames" load_steps=2 format=3 uid="uid://b8shieldframes1"]
+[gd_resource type="SpriteFrames" format=3 uid="uid://o6f6tf4siios"]
 
 [ext_resource type="Texture2D" path="res://sprites/powerups/shield.png" id="1"]
 

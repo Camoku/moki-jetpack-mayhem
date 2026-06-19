@@ -36,6 +36,7 @@ const SPRITE_ART := {
 	"magnet": {"frames": "res://sprites/powerups/magnet_frames.tres", "anim": "shimmer", "glow": Color(0.4, 1.0, 0.7), "scale": 0.16},
 	"doubler": {"frames": "res://sprites/powerups/x2_frames.tres", "anim": "idle", "glow": Color(0.5, 1.0, 0.45), "scale": 0.17},
 	"shield": {"frames": "res://sprites/powerups/shield_frames.tres", "anim": "idle", "glow": Color(0.5, 1.0, 0.65), "scale": 0.08},
+	"tiny": {"frames": "res://sprites/powerups/shrink_frames.tres", "anim": "idle", "glow": Color(0.5, 1.0, 0.55), "scale": 0.12},
 }
 
 
@@ -62,9 +63,6 @@ func _apply_look() -> void:
 		"dash":
 			box.color = Color(1.0, 0.5, 0.2, 1.0)
 			label.text = ">>"
-		"tiny":
-			box.color = Color(0.5, 1.0, 0.5, 1.0)
-			label.text = "T"
 		"secondchance":
 			box.color = Color(1.0, 0.4, 0.6, 1.0)
 			label.text = "+1"
