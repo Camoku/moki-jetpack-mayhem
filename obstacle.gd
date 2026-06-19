@@ -21,6 +21,9 @@ extends Area2D
 # Extra leftward speed on top of the world scroll. 0 for normal asteroids;
 # the Asteroid Storm sets this so meteors rush in fast.
 @export var extra_speed: float = 0.0
+# Spawn at the LEFT edge and rush RIGHT instead (the golem boss fires from both
+# sides). We add back 2x the scroll so its on-screen speed matches the right ones.
+@export var from_left: bool = false
 
 var camera: Node2D   # the world scroller; we delete once we are behind it.
 var _base_y: float = 0.0   # the height we drift around.
@@ -84,17 +87,27 @@ func _process(delta: float) -> void:
 	# Slow tumble (purely cosmetic - the collision box doesn't rotate).
 	sprite.rotation += _spin * delta
 
-	# Storm meteors rush left under their own steam (on top of the scroll).
+	if camera == null:
+		camera = get_tree().get_first_node_in_group("camera")
+
+	# Storm meteors rush under their own steam (on top of the scroll). Right ones
+	# fly left; left ones fly right with 2x the scroll added so they cross the screen
+	# at the same pace (else flying WITH the scroll makes them look sluggish).
 	if extra_speed != 0.0:
-		position.x -= extra_speed * delta
+		if from_left:
+			var sc: float = camera.current_speed() if (camera != null and camera.has_method("current_speed")) else 0.0
+			position.x += (extra_speed + 2.0 * sc) * delta
+		else:
+			position.x -= extra_speed * delta
 
 	# Optional gentle floating: ride a sine wave around our base height.
 	if drift_amplitude > 0.0:
 		_time += delta
 		position.y = _base_y + sin(_time * drift_speed) * drift_amplitude
 
-	# Once we have scrolled well behind the camera, remove ourselves.
-	if camera == null:
-		camera = get_tree().get_first_node_in_group("camera")
-	if camera != null and global_position.x < camera.global_position.x - cleanup_behind:
-		queue_free()
+	# Once we have flown well off the far side of the screen, remove ourselves.
+	if camera != null:
+		var gone: bool = (global_position.x > camera.global_position.x + cleanup_behind) if from_left \
+			else (global_position.x < camera.global_position.x - cleanup_behind)
+		if gone:
+			queue_free()

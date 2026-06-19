@@ -63,6 +63,8 @@ extends CharacterBody2D
 @export var tiny_time: float = 6.0          # Tiny Moki: how long you stay small.
 @export var second_chance_invuln: float = 1.6  # Second Chance: i-frames granted by a revive.
 @export var revive_invuln_time: float = 2.0    # Slot-machine REVIVE: i-frames after coming back.
+@export var bounce_strength: float = 360.0     # How hard a boss core knocks the Moki back when he hits it.
+@export var bounce_decay: float = 2200.0       # How fast that knockback fades (px/sec^2).
 
 # A reference to the flame node so we can show/hide it. The $ is shorthand
 # for get_node(): $Flame finds the child named "Flame". @onready waits until
@@ -89,6 +91,7 @@ var dead: bool = false
 # Shield powerup state.
 var has_shield: bool = false
 var invuln: float = 0.0   # seconds of post-shield invincibility remaining
+var _knockback: Vector2 = Vector2.ZERO   # transient bounce-back from hitting a boss core
 # The shield bubble's resting scale (set in the scene) + a timer that drives its
 # gentle breathing pulse + slow swirl while it's up.
 const SHIELD_SCALE := 0.14
@@ -166,6 +169,12 @@ func _physics_process(delta: float) -> void:
 	var carry: float = camera.current_speed() if camera != null else forward_speed
 	var move_input := Input.get_axis("move_left", "move_right")
 	velocity.x = carry + move_input * move_speed
+
+	# A boss-core hit shoves us back; the knockback rides on top of normal movement
+	# and fades over a fraction of a second.
+	if _knockback != Vector2.ZERO:
+		velocity += _knockback
+		_knockback = _knockback.move_toward(Vector2.ZERO, bounce_decay * delta)
 
 	# Apply everything above. move_and_slide() reads 'velocity',
 	# moves the body, and smoothly slides along any surfaces.
@@ -387,4 +396,13 @@ func revive() -> void:
 	invuln = maxf(invuln, revive_invuln_time)
 	# Make sure we're back inside the play area (not clipped into roof/floor).
 	position.y = clamp(position.y, ceiling_y, floor_y)
+
+
+# Called by a boss when the Moki damages its core: knock him back AWAY from the
+# core (mostly downward, since you fly UP into it) so the hit reads with a bounce.
+func bounce_from(source_pos: Vector2) -> void:
+	var dir: Vector2 = global_position - source_pos
+	if dir.length() < 1.0:
+		dir = Vector2.DOWN
+	_knockback = dir.normalized() * bounce_strength
 

@@ -33,6 +33,8 @@ var kind: String = "cannon"
 @export var attack_time: float = 2.5   # Length of each attack window.
 @export var frigate_volley_interval: float = 1.1  # Frigate fires a fresh missile volley this often DURING its attack.
 @export var frigate_volley_cutoff: float = 1.5    # ...but stops this many seconds before the attack ends, so the last missiles clear before the core opens.
+@export var golem_wave_interval: float = 0.9      # Golem hurls a fresh meteor wave this often DURING its attack.
+@export var golem_wave_cutoff: float = 1.2        # ...stops this many seconds before the attack ends (meteors are slow to cross, so the core window stays clear).
 @export var overheat_time: float = 2.2 # Length of each vulnerable (core exposed) window.
 @export var hit_cooldown: float = 0.35 # Min gap between core hits (stops one pass scoring many).
 @export var offset_x: float = 0.0      # Screen-x offset from the camera centre (top-centre by default).
@@ -100,6 +102,12 @@ const ART := {
 		"pos": Vector2(0, 52),
 		"core": Vector2(1, 64),
 	},
+	"golem": {
+		"tex": preload("res://sprites/bosses/asteroidgolem.png"),
+		"scale": Vector2(0.52, 0.48),   # rounder (saucer cropped off, so less squash); dome mounts flush to the ceiling
+		"pos": Vector2(0, 45),
+		"core": Vector2(-14, 63),
+	},
 }
 
 # Explosion spark-bursts reused for a boss's death (world-space pops).
@@ -128,7 +136,9 @@ func _configure_for_kind() -> void:
 			overheat_time = 2.8     # ...then a calmer, safer window to fly in and hit the core
 		"golem":
 			boss_name = "METEOR GOLEM"
-			housing.color = Color(0.36, 0.3, 0.26, 1.0)    # rocky brown
+			_apply_art("golem")   # real art (the placeholder rects are hidden)
+			attack_time = 3.6       # a longer meteor barrage (it ceasefires before the end)...
+			overheat_time = 2.8     # ...then a calmer window to fly in and hit the core
 		"main":
 			boss_name = "DREADNOUGHT"
 			max_hp = 8
@@ -201,6 +211,11 @@ func _process(delta: float) -> void:
 				if _volley_cd <= 0.0:
 					_volley_cd = frigate_volley_interval
 					_attack_missiles()
+			elif kind == "golem" and _t < attack_time - golem_wave_cutoff:
+				_volley_cd -= delta
+				if _volley_cd <= 0.0:
+					_volley_cd = golem_wave_interval
+					_attack_meteors()
 			if _t >= attack_time:
 				_enter_overheat()
 		State.OVERHEAT:
@@ -272,7 +287,7 @@ func _process(delta: float) -> void:
 func _enter_attack() -> void:
 	state = State.ATTACK
 	_t = 0.0
-	_volley_cd = frigate_volley_interval   # next extra volley (frigate only)
+	_volley_cd = frigate_volley_interval if kind == "frigate" else golem_wave_interval   # next extra volley/wave
 	_set_core_vulnerable(false)
 	_report_health()   # (re)show the HP bar now the fight is underway
 	_fire_pattern()
@@ -373,6 +388,10 @@ func _take_hit() -> void:
 		_spawn_burst(core.position, Color(0.7, 1.0, 0.7), false)
 		if camera != null:
 			camera.shake(4.0)
+	# Knock the Moki back off the core so the hit has weight.
+	var p := get_tree().get_first_node_in_group("player")
+	if p != null and p.has_method("bounce_from"):
+		p.bounce_from(core.global_position)
 	_report_health()
 	if hp <= 0:
 		_die()
@@ -636,10 +655,18 @@ func _attack_meteors() -> void:
 		return
 	var bands: Array[float] = [120.0, 230.0, 340.0, 450.0, 560.0]
 	bands.shuffle()
-	var count: int = mini(3 + int(round(_power() * 2.0)), bands.size() - 1)
-	var speed: float = 220.0 + 140.0 * _power()
+	# Each wave hits this many bands; the rest stay clear. Meteors come from BOTH
+	# edges (alternating) and the waves overlap, so it reads as a dense hail.
+	var count: int = mini(3 + int(round(_power() * 2.0)), bands.size() - 2)
+	var speed: float = 250.0 + 160.0 * _power()
 	for i in count:
+		var from_left: bool = (i % 2 == 0)
 		var a := obstacle_scene.instantiate()
-		a.position = Vector2(camera.global_position.x + 720.0, bands[i] + randf_range(-25.0, 25.0))
+		var edge_x: float = -720.0 if from_left else 720.0
+		a.position = Vector2(camera.global_position.x + edge_x, bands[i] + randf_range(-25.0, 25.0))
 		a.extra_speed = speed
+		a.from_left = from_left
+		if randf() < 0.55:                      # many meteors weave up/down = harder to read
+			a.drift_amplitude = randf_range(45.0, 90.0)
+			a.drift_speed = randf_range(1.6, 3.2)
 		get_parent().add_child(a)
