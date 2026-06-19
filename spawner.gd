@@ -189,7 +189,7 @@ const MINI_BOSSES: Array[String] = ["cannon", "frigate", "golem"]
 # whole screen opens to your chosen path: RISK = ~10s of full-screen CHAOS then a
 # jackpot; SAFE = a calm coin trickle. Reuses the laser/asteroid/coin/powerup scenes.
 @export var choice_divider_y: float = 358.0      # The split line: above = RISK, below = SAFE.
-@export var choice_decide_time: float = 3.0      # Seconds to pick a lane (divider up).
+@export var choice_decide_time: float = 5.0      # Seconds to pick a lane (divider up).
 @export var choice_consequence_time: float = 10.0  # Length of the chosen path (chaos / safe).
 @export var choice_chaos_interval: float = 0.5   # Asteroid (+ orb) gap during the RISK chaos.
 @export var choice_chaos_missile_interval: float = 1.4 # Missile-volley gap during the chaos.
@@ -532,6 +532,7 @@ func _advance_phase() -> void:
 			boss_failed(_last_boss)  # safety: the boss's own timer should end it first
 		Phase.CHOICE:
 			_set_player_protected(false)  # gauntlet over (survived / safe)
+			_show_choice_lanes(false)     # safety: make sure the lane labels are gone
 			_enter_breather()  # the fork is over -> calm, then normal play
 		Phase.BREATHER:
 			# The first event is guaranteed (so it shows up promptly); after that, a
@@ -1056,12 +1057,14 @@ func _enter_choice(is_main: bool = false) -> void:
 		d.fire_time = 1.0
 		_choice_divider = d
 		add_child(d)
-	_show_banner("CHOOSE!   ^ UP = RISK   v DOWN = SAFE", Color(1.0, 0.8, 0.3), choice_decide_time + 0.4)
+	_show_choice_lanes(true)   # neon "RISKY PATH" / "SAFE PATH" labels mark the two lanes
+	_show_banner("CHOOSE  PATH!", Color(1.0, 0.8, 0.3), choice_decide_time + 0.4)
 
 
 # Lock in the lane: open the screen back up and read which side the Moki picked.
 func _decide_choice() -> void:
 	_choice_decided = true
+	_show_choice_lanes(false)   # lane is locked in - drop the labels
 	if is_instance_valid(_choice_divider):
 		_choice_divider.queue_free()   # the whole screen opens again
 	_choice_divider = null
@@ -1086,6 +1089,7 @@ func choice_failed() -> void:
 	if _phase != Phase.CHOICE:
 		return
 	_set_player_protected(false)
+	_show_choice_lanes(false)
 	_set_status("")
 	_show_banner("RISK FAILED!   NO REWARD", Color(1.0, 0.4, 0.3), 2.5)
 	_enter_breather()
@@ -1095,6 +1099,17 @@ func _set_player_protected(v: bool) -> void:
 	var p := get_tree().get_first_node_in_group("player")
 	if p != null:
 		p.protected = v
+
+
+# Show/hide the neon RISKY/SAFE lane labels on the HUD during the Choice Gate.
+func _show_choice_lanes(on: bool) -> void:
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud == null:
+		return
+	if on and hud.has_method("show_choice_lanes"):
+		hud.show_choice_lanes()
+	elif not on and hud.has_method("hide_choice_lanes"):
+		hud.hide_choice_lanes()
 
 
 # One chaos beat: a fast (often drifting) asteroid PLUS, much of the time, a

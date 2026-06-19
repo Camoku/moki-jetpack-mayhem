@@ -12,26 +12,33 @@
 ;    +-- Barrel  (ColorRect)     <- a stub pointing down (decorative, other kinds)
 ;    +-- Core (Area2D)           <- the WEAK POINT you fly into to damage it
 ;         +-- CoreShape          <- its touch area
-;         +-- CoreGlow           <- a glow boss.gd tints red(sealed)/hot(exposed)/white(hit)
+;         +-- CoreRing           <- a white ring boss.gd pings outward while the core is exposed
 ;
 ;  Only a boss's ATTACK (beams / missiles / meteors) is deadly; the housing is
 ;  scenery and the core is beneficial - so there is no cheap "touched it = dead".
 ; ==========================================================
 
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://boss.gd" id="1_boss"]
-[ext_resource type="Texture2D" uid="uid://dliww5hf41mye" path="res://sprites/bosses/lasercannon.png" id="2_lcb"]
+[ext_resource type="Texture2D" uid="uid://c0qkx2nnendu5" path="res://sprites/bosses/lasercannon.png" id="2_lcb"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_core"]
 size = Vector2(72, 72)
 
-[sub_resource type="Gradient" id="Gradient_glow"]
-offsets = PackedFloat32Array(0, 1)
-colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+; ADD-blend material for the light-glow overlay: an additive copy of the boss
+; barely brightens the dark metal but makes the bright green lights pulse/flare.
+[sub_resource type="CanvasItemMaterial" id="Mat_glow"]
+blend_mode = 1
 
-[sub_resource type="GradientTexture2D" id="GlowTex_core"]
-gradient = SubResource("Gradient_glow")
+; A hard-edged white RING (transparent centre, bright band, transparent edge):
+; boss.gd pings it outward while the core is exposed.
+[sub_resource type="Gradient" id="Gradient_ring"]
+offsets = PackedFloat32Array(0, 0.55, 0.7, 0.82, 0.95)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="RingTex_core"]
+gradient = SubResource("Gradient_ring")
 width = 256
 height = 256
 fill = 1
@@ -47,8 +54,16 @@ script = ExtResource("1_boss")
 [node name="Body" type="Sprite2D" parent="."]
 visible = false
 texture_filter = 1
-position = Vector2(-6, 41)
-scale = Vector2(0.34, 0.34)
+position = Vector2(0, 35)
+scale = Vector2(0.52, 0.34)
+texture = ExtResource("2_lcb")
+
+; An additive copy of the cannon art, overlaid exactly. boss.gd pulses its alpha
+; so the boss's green lights "breathe" (and flare when it fires / overheats).
+[node name="Glow" type="Sprite2D" parent="Body"]
+texture_filter = 1
+material = SubResource("Mat_glow")
+modulate = Color(1, 1, 1, 0)
 texture = ExtResource("2_lcb")
 
 [node name="Housing" type="ColorRect" parent="."]
@@ -67,14 +82,16 @@ color = Color(0.22, 0.23, 0.3, 1)
 
 ; The weak point, hanging below the turret in reachable play space.
 [node name="Core" type="Area2D" parent="."]
-position = Vector2(0, 23)
+position = Vector2(4, 34)
 
 [node name="CoreShape" type="CollisionShape2D" parent="Core"]
 shape = SubResource("RectangleShape2D_core")
 
-; The weak-point glow: a soft radial that boss.gd tints red (sealed) / hot
-; (exposed, pulsing) / white (hit). Replaces the old flat square.
-[node name="CoreGlow" type="Sprite2D" parent="Core"]
+; The weak-point reticle: hidden while sealed; boss.gd shows it and pings it
+; outward (expanding + fading) while the core is exposed, so "fly in now" reads
+; clearly over the busy green art.
+[node name="CoreRing" type="Sprite2D" parent="Core"]
+visible = false
 texture_filter = 1
-scale = Vector2(0.55, 0.55)
-texture = SubResource("GlowTex_core")
+scale = Vector2(0.4, 0.4)
+texture = SubResource("RingTex_core")

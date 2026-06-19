@@ -429,17 +429,46 @@ theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
 theme_override_font_sizes/font_size = 28
 horizontal_alignment = 1
 
+; Choose-path neon lane labels: shown on the LEFT in each lane during the Choice
+; Gate decide window so you can see which side = which choice. hud.gd pulses them.
+[node name="RiskLane" type="Label" parent="HUD"]
+visible = false
+offset_left = 40.0
+offset_top = 250.0
+offset_right = 460.0
+offset_bottom = 304.0
+theme_override_colors/font_color = Color(1, 0.34, 0.3, 1)
+theme_override_colors/font_outline_color = Color(0.5, 0.0, 0.06, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 36
+text = "^  RISKY PATH"
+
+[node name="SafeLane" type="Label" parent="HUD"]
+visible = false
+offset_left = 40.0
+offset_top = 426.0
+offset_right = 460.0
+offset_bottom = 480.0
+theme_override_colors/font_color = Color(0.4, 1, 0.6, 1)
+theme_override_colors/font_outline_color = Color(0.0, 0.36, 0.18, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 36
+text = "v  SAFE PATH"
+
 [node name="BossBar" type="Control" parent="HUD" unique_id=443761694]
 visible = false
 layout_mode = 3
-anchors_preset = 5
+anchors_preset = 7
 anchor_left = 0.5
+anchor_top = 1.0
 anchor_right = 0.5
+anchor_bottom = 1.0
 offset_left = -180.0
-offset_top = 10.0
+offset_top = -66.0
 offset_right = 180.0
-offset_bottom = 64.0
+offset_bottom = -12.0
 grow_horizontal = 2
+grow_vertical = 0
 
 [node name="Label" type="Label" parent="HUD/BossBar" unique_id=273043401]
 layout_mode = 0

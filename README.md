@@ -57,8 +57,8 @@ Main (Node2D)
 | Scene / Script | Hazard |
 |---|---|
 | `Obstacle.tscn` / `obstacle.gd` | Asteroid — animated rock sprite (random tumble); can drift; storm meteors use `extra_speed` |
-| `VerticalLaser.tscn` / `vertical_laser.gd` | Solid full-height laser, screen-locked, charge→fire |
-| `HorizontalLaser.tscn` / `horizontal_laser.gd` | Solid full-width laser, charge→fire |
+| `VerticalLaser.tscn` / `vertical_laser.gd` | Full-height **crackling red** laser, screen-locked, charge→fire (built horizontal then rotated, extended past the screen edges) |
+| `HorizontalLaser.tscn` / `horizontal_laser.gd` | Full-width **crackling red** laser, charge→fire (animated beam + emitter caps) |
 | `BeamObstacle.tscn` / `beam_obstacle.gd` | Floating capped laser bar — metal caps + an **animated crackling** green beam (H or V, varied sizes) |
 | `Missile.tscn` / `missile.gd` | Warns ("!") at the right edge, then strikes left — animated missile (flickering exhaust) with a pulsing red danger glow |
 | `CaveWall.tscn` / `cave_wall.gd` | One tunnel slice (top+bottom walls + gap) for the Cave event — tiled tech-panel texture |
@@ -152,16 +152,18 @@ change, switched by **`kind`** (the "one scene, a `kind` picks behaviour" patter
 
 - **INTRO** — announcement banner plays while the boss waits off-screen, then it drops in
   (`arrive_delay`) and the HUD HP bar appears (with the boss's name).
-- **ATTACK** — fires a telegraphed pattern (per kind, below); the core is sealed.
-- **OVERHEAT** — the attack stops, the **core** glows and becomes touchable; fly the Moki
-  into it (`Core.body_entered`) for −1 HP (short `hit_cooldown`).
+- **ATTACK** — fires a telegraphed pattern (per kind, below); the core is sealed (no telegraph).
+- **OVERHEAT** — the attack stops, the **core** becomes touchable and a **white "ping" ring**
+  pulses outward over it (= "fly in now"); fly the Moki into it (`Core.body_entered`) for −1 HP
+  (short `hit_cooldown`).
 - Loop until **HP 0 → destroyed** (→ reward) or **`max_time` → retreat** (no reward).
 
 Only a boss's **attack** is deadly — the housing is scenery and the core is *beneficial*
-(no cheap "touched it = dead"). Attacks all reuse existing hazards: **cannon** = sweep/lane
-beams; **frigate** = telegraphed missile volleys; **golem** = fast asteroid waves; **main
-(DREADNOUGHT)** round-robins the **Laser-Frenzy walls** (vertical / horizontal / combined
-safe-pocket) + missiles + meteors.
+(no cheap "touched it = dead"). Attacks all reuse existing hazards: **cannon** = sweep / lane /
+**cross** beams (the cross fires vertical **and** horizontal beams at once, leaving one safe
+pocket — power-scaled charge time); **frigate** = telegraphed missile volleys; **golem** = fast
+asteroid waves; **main (DREADNOUGHT)** round-robins the **Laser-Frenzy walls** (vertical /
+horizontal / combined safe-pocket) + missiles + meteors.
 
 **Progression (per-run, in `spawner.gd`):** the three mini-bosses (`cannon`, `frigate`,
 `golem`) appear in turn; the gate is **defeat**, not encounter (`_bosses_defeated`) — a
@@ -199,8 +201,10 @@ powerup)` → the REWARD window), and the Choice Gate.
 
 The **Choice Gate** *replaces* the post-boss reward (`boss_defeated()` → `_enter_choice()`,
 `Phase.CHOICE`):
-- **Decide (~3s):** a faint, non-deadly divider line splits the screen — fly **above** for
-  RISK, **below** for SAFE; your side locks in when the timer ends and the line vanishes.
+- **Decide (~5s):** a faint, non-deadly divider line splits the screen, a **"CHOOSE PATH!"**
+  banner shows up top, and **neon lane labels** (`^ RISKY PATH` red / `v SAFE PATH` green, pulsing,
+  on the left) mark each lane so you can see which side = which. Fly **above** the line for RISK,
+  **below** for SAFE; your side locks in when the timer ends and the line + labels vanish.
 - **RISK:** ~10s of full-screen chaos (asteroids + orbs + missiles). A hit **fails the event**
   (`player.protected` → `choice_failed()`, no reward) but does **not** end the run (a Shield /
   Second Chance still absorbs it and you keep going). Survive untouched → the screen clears and
@@ -317,9 +321,15 @@ Real art lives in `res://sprites/`. We slice/play it with **`AnimatedSprite2D` +
   have white details to keep, so their backgrounds were removed by a **flood-fill from the image
   edges** instead.)
 
+The **laser-cannon boss** uses real art too: `sprites/bosses/lasercannon.png` on a `Body`
+sprite (the other boss kinds still use the `Housing` rect). Its lights **breathe** via an
+additive overlay (`Body/Glow`) that flares when it fires / overheats, and it **explodes** on
+death (spark bursts + strobe + screen shake). The full-screen **lasers are real too** — a red
+crackling beam (`lazer_beam_red*`, made by channel-swapping the green floating-beam art).
+
 Adding more art later follows the same recipe: drop PNGs in `res://sprites/`, set the filter,
-build a `SpriteFrames` (or just a `Sprite2D` for a single image), point a node at it. Beams,
-lasers, the other powerups, the HUD, and bosses are still placeholder rectangles.
+build a `SpriteFrames` (or just a `Sprite2D` for a single image), point a node at it. The other
+powerups, the HUD, and the other boss kinds' bodies are still placeholder rectangles.
 
 ---
 

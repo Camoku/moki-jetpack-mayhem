@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c0qkx2nnendu5"
-path="res://.godot/imported/lasercannon.png-43a0ba92ee47eaab89b7d91202ac71dc.ctex"
+uid="uid://bhqnqrwxya2b"
+path="res://.godot/imported/lazer_beam_red.png-a839919e8cd07a52c6b50a954efce25a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/bosses/lasercannon.png"
-dest_files=["res://.godot/imported/lasercannon.png-43a0ba92ee47eaab89b7d91202ac71dc.ctex"]
+source_file="res://sprites/hazards/lazer_beam_red.png"
+dest_files=["res://.godot/imported/lazer_beam_red.png-a839919e8cd07a52c6b50a954efce25a.ctex"]
 
 [params]
 

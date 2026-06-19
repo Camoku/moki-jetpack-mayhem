@@ -1,19 +1,25 @@
 ; ==========================================================
-;  VerticalLaser.tscn - a solid full-height laser
+;  VerticalLaser.tscn - a full-height laser (a crackling RED beam)
 ; ==========================================================
-;  vertical_laser.gd sizes these to span the whole play height:
+;  vertical_laser.gd builds this like the horizontal laser - a crackling beam
+;  stretched past the screen edges so its ends sit off-screen - then rotates the
+;  whole node a quarter-turn so it stands up. No end caps (they'd be off-screen).
 ;    CollisionShape2D <- the deadly box
-;    Beam             <- the red visual
+;    Beam             <- the red crackling laser (AnimatedSprite2D)
 ; ==========================================================
 
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://vertical_laser.gd" id="1_vl"]
+[ext_resource type="SpriteFrames" path="res://sprites/hazards/lazer_beam_red_frames.tres" id="2_beam"]
 
 [node name="VerticalLaser" type="Area2D"]
 script = ExtResource("1_vl")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 
-[node name="Beam" type="ColorRect" parent="."]
-color = Color(1, 0.3, 0.25, 1)
+[node name="Beam" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+sprite_frames = ExtResource("2_beam")
+animation = &"crackle"
+autoplay = "crackle"

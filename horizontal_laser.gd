@@ -22,27 +22,37 @@ enum State { CHARGING, FIRING }
 # (the mini-boss sets this so its beams sweep). 0 = a normal, still beam.
 @export var sweep_speed: float = 0.0
 
-const COLOR_BEAM := Color(1.0, 0.3, 0.25, 1.0)
-
 var state: int = State.CHARGING
 var deadly: bool = false
 var _t: float = 0.0
 var _pulse: float = 0.0
 var camera: Node2D
 
-@onready var beam: ColorRect = $Beam
+@onready var beam: AnimatedSprite2D = $Beam
+@onready var cap1: Sprite2D = $Cap1
+@onready var cap2: Sprite2D = $Cap2
 @onready var shape: CollisionShape2D = $CollisionShape2D
 
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
-	# Size the beam visual and its collision box.
-	beam.color = COLOR_BEAM
-	beam.offset_left = -beam_width * 0.5
-	beam.offset_right = beam_width * 0.5
-	beam.offset_top = -beam_thickness * 0.5
-	beam.offset_bottom = beam_thickness * 0.5
+	# Build the beam in code - same look as the floating BeamObstacle (crackling
+	# energy + emitter caps), just red + full screen width.
+	# Stretch the crackle frame to span the full width, beam_thickness tall.
+	var btex: Texture2D = beam.sprite_frames.get_frame_texture(&"crackle", 0)
+	beam.scale = Vector2(beam_width / float(btex.get_width()), beam_thickness / float(btex.get_height()))
+	beam.position = Vector2.ZERO
+	beam.frame = randi() % beam.sprite_frames.get_frame_count(&"crackle")
+
+	# Emitter caps at the far left/right ends (Cap2 mirrored), like the floating beam.
+	var half: float = beam_width * 0.5
+	var cap_scale: float = (beam_thickness * 1.4) / float(cap1.texture.get_height())
+	cap1.scale = Vector2(cap_scale, cap_scale)
+	cap2.scale = Vector2(cap_scale, cap_scale)
+	cap2.flip_h = true
+	cap1.position = Vector2(-half, 0.0)
+	cap2.position = Vector2(half, 0.0)
 
 	var rs := RectangleShape2D.new()
 	rs.size = Vector2(beam_width, beam_thickness)

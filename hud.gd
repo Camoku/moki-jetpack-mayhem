@@ -75,6 +75,8 @@ var player: Node2D
 @onready var powerup_label: Label = $PowerupLabel
 @onready var banner_label: Label = $BannerLabel
 @onready var survival_label: Label = $SurvivalLabel
+@onready var risk_lane: Label = $RiskLane     # choose-path neon lane labels
+@onready var safe_lane: Label = $SafeLane
 @onready var boss_bar: Control = $BossBar
 @onready var boss_fill: ColorRect = $BossBar/Fill
 @onready var boss_label: Label = $BossBar/Label
@@ -97,6 +99,7 @@ const BOSS_BAR_WIDTH := 360.0
 
 # Seconds the flash banner stays up after it appears.
 var _banner_time: float = 0.0
+var _lane_pulse: float = 0.0   # drives the neon flicker on the choose-path lane labels
 
 
 # The final-score multiplier, based on how many coins we grabbed.
@@ -130,6 +133,8 @@ func _ready() -> void:
 	slot_panel.visible = false
 	banner_label.visible = false
 	survival_label.visible = false
+	risk_lane.visible = false
+	safe_lane.visible = false
 	boss_bar.visible = false
 	flash_rect.visible = false
 	mult_label.text = "Multiplier: x1.0"
@@ -173,6 +178,12 @@ func _process(delta: float) -> void:
 		if _banner_time <= 0.0:
 			banner_label.visible = false
 
+	# Neon flicker on the choose-path lane labels (slightly out of phase = lively).
+	if risk_lane.visible:
+		_lane_pulse += delta * 5.0
+		risk_lane.modulate.a = 0.72 + 0.28 * sin(_lane_pulse)
+		safe_lane.modulate.a = 0.72 + 0.28 * sin(_lane_pulse + 1.6)
+
 	# Find the scrolling camera; how far it has moved = how deep we have flown.
 	if camera == null:
 		camera = get_tree().get_first_node_in_group("camera")
@@ -200,6 +211,18 @@ func set_status(text: String) -> void:
 	else:
 		survival_label.text = text
 		survival_label.visible = true
+
+
+# Show/hide the "RISKY PATH" / "SAFE PATH" neon lane labels during the Choice Gate.
+func show_choice_lanes() -> void:
+	_lane_pulse = 0.0
+	risk_lane.visible = true
+	safe_lane.visible = true
+
+
+func hide_choice_lanes() -> void:
+	risk_lane.visible = false
+	safe_lane.visible = false
 
 
 # Called by the mini-boss to show/update its health bar. The fill shrinks as

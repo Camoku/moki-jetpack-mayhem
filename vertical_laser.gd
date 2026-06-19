@@ -28,7 +28,7 @@ enum State { CHARGING, FIRING }
 # (the mini-boss sets this so its beams sweep). 0 = a normal, still beam.
 @export var sweep_speed: float = 0.0
 
-const COLOR_BEAM := Color(1.0, 0.3, 0.25, 1.0)
+const OVERSHOOT := 200.0   # how far the beam pokes past the play area (so its ends are off-screen)
 
 var state: int = State.CHARGING
 var deadly: bool = false
@@ -36,27 +36,31 @@ var _t: float = 0.0
 var _pulse: float = 0.0
 var camera: Node2D
 
-@onready var beam: ColorRect = $Beam
+@onready var beam: AnimatedSprite2D = $Beam
 @onready var shape: CollisionShape2D = $CollisionShape2D
 
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
-	# Build the full-height beam (visual + collision) in code.
-	var height: float = area_bottom - area_top
-	beam.color = COLOR_BEAM
-	beam.offset_left = -beam_width * 0.5
-	beam.offset_right = beam_width * 0.5
-	beam.offset_top = area_top
-	beam.offset_bottom = area_bottom
+	# Build it like the horizontal laser - a crackling beam stretched well past the
+	# screen edges (no caps - the ends sit off-screen) - then rotate the whole node a
+	# quarter-turn so it stands up. (Same build-then-rotate trick the floating beam uses.)
+	var length: float = (area_bottom - area_top) + OVERSHOOT * 2.0   # overshoot top + bottom
+
+	# Stretch the crackle frame to span the whole length (along its length).
+	var btex: Texture2D = beam.sprite_frames.get_frame_texture(&"crackle", 0)
+	beam.scale = Vector2(length / float(btex.get_width()), beam_width / float(btex.get_height()))
+	beam.position = Vector2.ZERO
+	beam.frame = randi() % beam.sprite_frames.get_frame_count(&"crackle")
 
 	var rs := RectangleShape2D.new()
-	rs.size = Vector2(beam_width, height)
+	rs.size = Vector2(length, beam_width)
 	shape.shape = rs
-	shape.position = Vector2(0.0, area_top + height * 0.5)
+	shape.position = Vector2.ZERO
 
-	modulate.a = 0.35   # faint while charging
+	rotation = PI * 0.5   # stand the horizontal beam up into a vertical one
+	modulate.a = 0.35     # faint while charging
 
 
 func _process(delta: float) -> void:
@@ -67,7 +71,7 @@ func _process(delta: float) -> void:
 	if camera == null:
 		camera = get_tree().get_first_node_in_group("camera")
 	if camera != null:
-		global_position = Vector2(camera.global_position.x + offset_x, 0.0)
+		global_position = Vector2(camera.global_position.x + offset_x, (area_top + area_bottom) * 0.5)
 
 	_t += delta
 	match state:

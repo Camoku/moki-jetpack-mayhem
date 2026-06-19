@@ -51,9 +51,6 @@ var obstacle_scene: PackedScene
 var difficulty: float = 0.0
 var overdrive: float = 0.0   # >0 only for bosses that recur after the main boss (buffs them)
 
-const COLOR_CORE_COLD := Color(0.5, 0.15, 0.15, 1.0)  # sealed (don't bother)
-const COLOR_CORE_HOT := Color(1.0, 0.75, 0.2, 1.0)    # exposed (fly in!)
-
 var state: int = State.INTRO
 var hp: int = 0
 var _t: float = 0.0          # time spent in the current state
@@ -65,17 +62,26 @@ var _last_formation: String = ""  # previous frenzy formation, so the main boss 
 var _main_attack_index: int = 0   # round-robins the main boss through its three attacks
 var _core_vulnerable: bool = false
 var _flash_t: float = 0.0    # brief white flash on the cannon body when the core is hit
+var _shake_t: float = 0.0    # transient body-shake timer (fire / hit / death)
+var _shake_mag: float = 0.0  # current shake magnitude in px
+var _fire_flash: float = 0.0 # brief flare of the boss's lights the moment it fires
+var _die_burst_cd: float = 0.0  # spacing between explosion bursts during the death sequence
 var camera: Node2D
 
 @onready var body_sprite: Sprite2D = $Body
+@onready var body_glow: Sprite2D = $Body/Glow   # additive overlay; its alpha = how lit the boss looks
 @onready var housing: ColorRect = $Housing
 @onready var barrel: ColorRect = $Barrel
 @onready var core: Area2D = $Core
-@onready var core_glow: Sprite2D = $Core/CoreGlow
+@onready var core_ring: Sprite2D = $Core/CoreRing
 
 # The Body sprite's resting position (the cannon boss hover-bobs around this).
-const BODY_X := -6.0
-const BODY_Y := 41.0
+const BODY_X := 0.0
+const BODY_Y := 35.0
+
+# Explosion spark-bursts reused for the cannon boss's death (world-space pops).
+const FIREWORKS := preload("res://Fireworks.tscn")
+const DEATH_COLORS: Array[Color] = [Color(1, 0.6, 0.2), Color(1, 0.85, 0.3), Color(1, 0.35, 0.2), Color(0.6, 1.0, 0.5)]
 
 
 func _ready() -> void:
@@ -136,7 +142,9 @@ func _process(delta: float) -> void:
 			y = top_y - 240.0   # parked above the screen while the banner is up
 		else:
 			y = lerp(top_y - 240.0, top_y, clamp((_t - arrive_delay) / maxf(0.01, intro_time - arrive_delay), 0.0, 1.0))
-	elif state == State.DYING or state == State.RETREAT:
+	elif state == State.DYING:
+		y = lerp(top_y, top_y - 260.0, clamp((_t - 0.35) / 0.5, 0.0, 1.0))   # blow up in place, THEN fly out
+	elif state == State.RETREAT:
 		y = lerp(top_y, top_y - 260.0, clamp(_t / 0.7, 0.0, 1.0))
 	if camera != null:
 		global_position = Vector2(camera.global_position.x + offset_x, y)
@@ -153,7 +161,16 @@ func _process(delta: float) -> void:
 			_pulse_core(delta)
 			if _t >= overheat_time:
 				_enter_attack()
-		State.DYING, State.RETREAT:
+		State.DYING:
+			# Rapid-fire explosion pops all over the body while it blows up.
+			_die_burst_cd -= delta
+			if _die_burst_cd <= 0.0 and _t < 0.7:
+				_die_burst_cd = 0.09
+				var off := Vector2(randf_range(-130.0, 130.0), randf_range(-30.0, 110.0))
+				_spawn_burst(off, DEATH_COLORS[randi() % DEATH_COLORS.size()], randf() < 0.5)
+			if _t >= 0.85:
+				queue_free()
+		State.RETREAT:
 			if _t >= 0.7:
 				queue_free()
 
@@ -161,16 +178,38 @@ func _process(delta: float) -> void:
 	if (state == State.ATTACK or state == State.OVERHEAT) and _life >= max_time:
 		_fail()
 
-	# Cannon boss juice: a gentle hover bob, plus a quick white flash when its core
-	# takes a hit. (The other kinds use the static Housing rect.)
+	# Cannon boss juice: hover bob + a recoil kick when it fires, a frantic tremble
+	# while it overheats, a white flash when its core is hit, and a strobing shake as
+	# it blows up. (The other kinds use the static Housing rect.)
 	if body_sprite.visible:
-		body_sprite.position = Vector2(BODY_X, BODY_Y + sin(_life * 2.0) * 4.0)
-		if state != State.DYING:
-			if _flash_t > 0.0:
-				_flash_t -= delta
-				body_sprite.modulate = Color(1, 1, 1, 1).lerp(Color(2.2, 2.2, 2.2, 1), clampf(_flash_t / 0.15, 0.0, 1.0))
-			else:
-				body_sprite.modulate = Color(1, 1, 1, 1)
+		var ox := 0.0
+		var oy := 0.0
+		if _shake_t > 0.0:                                  # transient shake (fire / hit / death)
+			_shake_t -= delta
+			ox += randf_range(-_shake_mag, _shake_mag)
+			oy += randf_range(-_shake_mag, _shake_mag)
+		body_sprite.position = Vector2(BODY_X + ox, BODY_Y + sin(_life * 2.0) * 4.0 + oy)
+
+		# Animate the boss's lights via the additive overlay: a gentle idle "breathing",
+		# a faster/brighter flare while it overheats, and a sharp flash when it fires.
+		var glow_a := 0.12 + 0.07 * sin(_life * 3.0)
+		if state == State.OVERHEAT:
+			glow_a = 0.30 + 0.22 * sin(_life * 12.0)
+		if _fire_flash > 0.0:
+			_fire_flash -= delta
+			glow_a = maxf(glow_a, (_fire_flash / 0.2) * 0.85)
+		body_glow.modulate.a = glow_a
+
+		if state == State.DYING:
+			_shake_mag = 7.0                                # keep it rattling the whole death
+			_shake_t = maxf(_shake_t, 0.05)
+			var strobe := 1.7 + 0.7 * sin(_life * 70.0)     # flash bright as it detonates
+			body_sprite.modulate = Color(strobe, strobe, strobe, 1.0)
+		elif _flash_t > 0.0:
+			_flash_t -= delta
+			body_sprite.modulate = Color(1, 1, 1, 1).lerp(Color(2.2, 2.2, 2.2, 1), clampf(_flash_t / 0.15, 0.0, 1.0))
+		else:
+			body_sprite.modulate = Color(1, 1, 1, 1)
 
 
 # --- State transitions ------------------------------------------------------
@@ -181,6 +220,11 @@ func _enter_attack() -> void:
 	_set_core_vulnerable(false)
 	_report_health()   # (re)show the HP bar now the fight is underway
 	_fire_pattern()
+	if body_sprite.visible:                # its lights flare and it shudders as it fires
+		_fire_flash = 0.2
+		_shake_body(4.0, 0.25)
+		if camera != null:
+			camera.shake(6.0)
 
 
 func _enter_overheat() -> void:
@@ -195,6 +239,12 @@ func _die() -> void:
 	_set_core_vulnerable(false)
 	housing.color = Color(1.0, 0.85, 0.4, 1.0)   # flash bright as it blows (other kinds)
 	body_sprite.modulate = Color(2.2, 2.2, 2.2, 1.0)    # the cannon sprite flares bright
+	# Kick off the explosion: a big central pop, a hard rattle and a heavy screen shake.
+	_die_burst_cd = 0.0
+	_shake_body(8.0, 0.85)
+	_spawn_burst(Vector2(0, 40), Color(1, 0.95, 0.6), true)
+	if camera != null:
+		camera.shake(16.0)
 	var sp := get_tree().get_first_node_in_group("spawner")
 	if sp != null and sp.has_method("boss_defeated"):
 		sp.boss_defeated(kind)
@@ -213,14 +263,17 @@ func _fail() -> void:
 
 func _set_core_vulnerable(v: bool) -> void:
 	_core_vulnerable = v
-	core_glow.modulate = COLOR_CORE_HOT if v else COLOR_CORE_COLD
-	core_glow.modulate.a = 1.0
+	# No telegraph while sealed - the core just shows the boss's own green art.
+	# When exposed, a white ring pings outward (driven by _pulse_core) = "fly in now".
+	core_ring.visible = v
 
 
-# Make the exposed core pulse so it clearly reads as "hit me now".
+# Make the exposed core unmistakable: a white ring that pings outward then resets.
 func _pulse_core(delta: float) -> void:
 	_pulse += delta * 8.0
-	core_glow.modulate.a = 0.55 + 0.45 * sin(_pulse)
+	var grow: float = fmod(_pulse * 0.16, 1.0)   # 0->1 sawtooth ping
+	core_ring.scale = Vector2.ONE * (0.30 + grow * 0.55)
+	core_ring.modulate = Color(1, 1, 1, 1.0 - grow)
 
 
 func _on_core_entered(body: Node) -> void:
@@ -229,11 +282,33 @@ func _on_core_entered(body: Node) -> void:
 		_take_hit()
 
 
+# Start a transient body shake (fire / hit / death). Magnitude in px, dur in sec.
+func _shake_body(mag: float, dur: float) -> void:
+	_shake_mag = mag
+	_shake_t = dur
+
+
+# Pop a world-space explosion spark-burst at a position relative to the boss.
+func _spawn_burst(offset: Vector2, color: Color, big: bool) -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	var fw := FIREWORKS.instantiate()
+	fw.fw_big = big
+	fw.fw_color = color
+	parent.add_child(fw)
+	fw.global_position = global_position + offset
+
+
 func _take_hit() -> void:
 	hp -= 1
 	_hit_cd = hit_cooldown
-	core_glow.modulate = Color(1, 1, 1, 1)   # white flash; the pulse restores the hot colour
-	_flash_t = 0.15                          # flash the cannon body too
+	_flash_t = 0.15                          # flash the cannon body white on a hit
+	if body_sprite.visible:                  # jolt + a little spark pop at the core
+		_shake_body(5.0, 0.18)
+		_spawn_burst(core.position, Color(0.7, 1.0, 0.7), false)
+		if camera != null:
+			camera.shake(4.0)
 	_report_health()
 	if hp <= 0:
 		_die()
@@ -279,13 +354,18 @@ func _attack_beams() -> void:
 		return
 	# Pick a pattern, never the same one twice in a row.
 	var patterns: Array[String] = ["sweep", "lanes"]
-	if patterns.has(_last_pattern):
+	# The crossing pattern needs both orientations: vertical AND horizontal beams
+	# at once, leaving a single safe pocket - the toughest beam attack.
+	if vertical_laser_scene != null and horizontal_laser_scene != null:
+		patterns.append("cross")
+	if patterns.size() > 1 and patterns.has(_last_pattern):
 		patterns.erase(_last_pattern)
 	var choice: String = patterns.pick_random()
 	_last_pattern = choice
 	match choice:
 		"sweep": _fire_sweep()
 		"lanes": _fire_lanes()
+		"cross": _fire_cross()
 
 
 # A full-height vertical beam that sweeps across from one side - flee to the
@@ -342,6 +422,37 @@ func _fire_lanes() -> void:
 			h.charge_time = 1.0
 			h.fire_time = 1.2
 			get_parent().add_child(h)
+
+
+# A CROSS of vertical AND horizontal beams firing together, leaving a single safe
+# POCKET (where the open column meets the open row) to thread to. The cannon's
+# toughest beam pattern - mixes its attacks up with a "reach the exact spot" beat.
+func _fire_cross() -> void:
+	if vertical_laser_scene == null or horizontal_laser_scene == null:
+		_fire_lanes()
+		return
+	var cols := [-440.0, -160.0, 160.0, 440.0]
+	var rows := [150.0, 330.0, 510.0]
+	var safe_col := randi() % cols.size()
+	var safe_row := randi() % rows.size()
+	var charge: float = lerp(1.4, 1.0, _power())   # higher power = less warning = harder
+	for i in cols.size():
+		if i == safe_col:
+			continue
+		var v := vertical_laser_scene.instantiate()
+		v.offset_x = cols[i]
+		v.charge_time = charge
+		v.fire_time = 1.2
+		get_parent().add_child(v)
+	for j in rows.size():
+		if j == safe_row:
+			continue
+		var h := horizontal_laser_scene.instantiate()
+		h.beam_y = rows[j]
+		h.beam_thickness = 50.0
+		h.charge_time = charge
+		h.fire_time = 1.2
+		get_parent().add_child(h)
 
 
 # --- Frenzy attack (main boss) ----------------------------------------------
