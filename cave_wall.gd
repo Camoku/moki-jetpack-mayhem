@@ -12,7 +12,7 @@ extends Area2D
 @export var gap_height: float = 220.0     # how tall the gap is (set by spawner)
 @export var wall_width: float = 52.0      # slice thickness (slightly overlaps neighbours)
 @export var area_top: float = 0.0
-@export var area_bottom: float = 660.0
+@export var area_bottom: float = 610.0
 @export var cleanup_behind: float = 760.0
 
 var camera: Node2D

@@ -59,7 +59,7 @@ extends Node2D
 @export var coin_row_max: int = 6         # ...up to this many.
 @export var coin_spacing: float = 60.0    # Gap between coins in a row.
 @export var coin_min_y: float = 90.0      # Coin height range.
-@export var coin_max_y: float = 560.0
+@export var coin_max_y: float = 510.0
 
 # --- Spin tokens (rare: spent at the end of the run on the slot machine) ---
 @export var spin_token_scene: PackedScene
@@ -87,7 +87,7 @@ extends Node2D
 @export var max_hazards_max: int = 8      # Cap once fully ramped.
 
 @export var min_y: float = 90.0           # Asteroid height range.
-@export var max_y: float = 600.0
+@export var max_y: float = 550.0
 
 # Lasers stay rare-ish: a minimum gap between them so two never trap you.
 @export var laser_cooldown: float = 3.0
@@ -196,7 +196,7 @@ const MINI_BOSSES: Array[String] = ["cannon", "frigate", "golem"]
 @export var choice_safe_coin_interval: float = 0.7  # Gap between scattered coin clusters on the SAFE path.
 @export var choice_safe_speed_mult: float = 1.9  # World speeds up on the SAFE path (scramble for coins).
 @export var choice_min_y: float = 90.0           # Full-screen spawn band (screen is open after choosing).
-@export var choice_max_y: float = 560.0
+@export var choice_max_y: float = 510.0
 @export var choice_jackpot_coins: int = 100      # RISK survival reward: coins the chest banks (plus a free shield).
 @export var chest_scene: PackedScene             # the reward chest you fly over after surviving RISK
 
@@ -616,7 +616,7 @@ func _enter_storm() -> void:
 
 func _spawn_storm_asteroid() -> void:
 	var a := obstacle_scene.instantiate()
-	a.position = Vector2(camera.global_position.x + 720.0, randf_range(90.0, 560.0))
+	a.position = Vector2(camera.global_position.x + 720.0, randf_range(90.0, 510.0))
 	a.extra_speed = storm_asteroid_speed   # rush left fast
 	if randf() < 0.3:
 		a.drift_amplitude = randf_range(30.0, 70.0)
@@ -637,7 +637,7 @@ func _enter_barrage() -> void:
 func _spawn_missile_volley() -> void:
 	if missile_scene == null:
 		return
-	var rows := [110.0, 220.0, 330.0, 440.0, 550.0]
+	var rows := [110.0, 220.0, 330.0, 440.0, 500.0]
 	rows.shuffle()
 	# Fire at this many of the rows; the rest stay open as safe gaps.
 	var count := roundi(lerp(2.0, 4.0, _difficulty()))
@@ -1259,10 +1259,10 @@ func _spawn_orb() -> void:
 		return
 	var orb := orb_scene.instantiate()
 	var spawn_x := camera.global_position.x + spawn_ahead
-	var y := randf_range(140.0, 520.0)
+	var y := randf_range(140.0, 470.0)
 	var tries := 0
 	while _overlaps(Vector2(spawn_x, y), 26.0, ["coin", "powerup", "ring", "spintoken"]) and tries < 8:
-		y = randf_range(140.0, 520.0)
+		y = randf_range(140.0, 470.0)
 		tries += 1
 	orb.position = Vector2(spawn_x, y)
 	orb.vy = randf_range(290.0, 380.0) * (1.0 + 0.4 * _difficulty())
@@ -1278,10 +1278,10 @@ func _spawn_drone() -> void:
 		return
 	var drone := drone_scene.instantiate()
 	var spawn_x := camera.global_position.x + spawn_ahead
-	var y := randf_range(140.0, 520.0)
+	var y := randf_range(140.0, 470.0)
 	var tries := 0
 	while _overlaps(Vector2(spawn_x, y), 26.0, ["coin", "powerup", "ring", "spintoken"]) and tries < 8:
-		y = randf_range(140.0, 520.0)
+		y = randf_range(140.0, 470.0)
 		tries += 1
 	drone.position = Vector2(spawn_x, y)
 	drone.home_speed = lerp(160.0, 260.0, _difficulty())   # tracks a bit faster deep in a run
@@ -1329,7 +1329,7 @@ func _spawn_missile_at(y: float) -> void:
 func _spawn_missile_wave() -> void:
 	if missile_scene == null:
 		return
-	var rows := [140.0, 280.0, 420.0, 540.0]
+	var rows := [140.0, 280.0, 420.0, 490.0]
 	rows.shuffle()
 	var count := 1
 	if randf() < _difficulty() * missile_double_chance:

@@ -20,7 +20,7 @@ enum State { CHARGING, FIRING }
 
 @export var beam_width: float = 44.0      # How thick the beam is.
 @export var area_top: float = 0.0         # Top of the play area.
-@export var area_bottom: float = 660.0    # Bottom (the floor surface).
+@export var area_bottom: float = 610.0    # Bottom (the floor surface).
 @export var offset_x: float = 0.0         # Screen offset from camera centre (set by spawner).
 @export var charge_time: float = 1.0      # Warning time before firing.
 @export var fire_time: float = 1.1        # How long it stays deadly.

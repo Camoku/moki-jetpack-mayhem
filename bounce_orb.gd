@@ -12,7 +12,7 @@ extends Area2D
 
 @export var cleanup_behind: float = 760.0
 @export var bounce_top: float = 70.0       # highest the orb rises to
-@export var bounce_bottom: float = 650.0   # lowest it falls to
+@export var bounce_bottom: float = 590.0   # lowest it falls to (just on the floor surface)
 @export var orb_radius: float = 20.0       # for keeping pickups clear
 
 # Vertical speed (px/sec). The spawner sets this; the SIGN is the start

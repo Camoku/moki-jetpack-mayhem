@@ -24,6 +24,8 @@
 [ext_resource type="PackedScene" path="res://SpinToken.tscn" id="22_spintoken"]
 [ext_resource type="SpriteFrames" uid="uid://cm2a7c4h13vfc" path="res://sprites/moki_frames.tres" id="23_mokiframes"]
 [ext_resource type="Script" uid="uid://c7wmykfldtt8y" path="res://jet_flame.gd" id="24_jetflame"]
+[ext_resource type="Texture2D" uid="uid://d1i22gelo3umh" path="res://sprites/backgrounds/city_bg.png" id="25_citybg"]
+[ext_resource type="Texture2D" uid="uid://d0lv6hf1cn8rk" path="res://sprites/backgrounds/city_floor.png" id="26_cityfloor"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_box"]
 size = Vector2(64, 64)
@@ -248,22 +250,36 @@ offset_right = 203.0
 offset_bottom = 523.0
 color = Color(0.9, 0.9, 1, 1)
 
-[node name="FloorLayer" type="ParallaxLayer" parent="Background" unique_id=2017528525]
+[node name="CityLayer" type="ParallaxLayer" parent="Background" unique_id=287796928]
+motion_scale = Vector2(0.4, 1)
+motion_mirroring = Vector2(2149.12, 0)
+
+[node name="City" type="Sprite2D" parent="Background/CityLayer" unique_id=941547194]
+texture_filter = 1
+scale = Vector2(0.92, 0.92)
+texture = ExtResource("25_citybg")
+centered = false
+
+[node name="FloorTexLayer" type="ParallaxLayer" parent="Background" unique_id=1277260967]
+motion_scale = Vector2(1, 0)
+motion_mirroring = Vector2(1401.6, 0)
+
+[node name="FloorTex" type="Sprite2D" parent="Background/FloorTexLayer" unique_id=536183137]
+texture_filter = 1
+position = Vector2(-1, 610)
+scale = Vector2(0.6004281, 1.1000003)
+texture = ExtResource("26_cityfloor")
+centered = false
+
+[node name="FloorEdgeLayer" type="ParallaxLayer" parent="Background" unique_id=805349336]
 motion_scale = Vector2(0, 0)
 
-[node name="FloorBase" type="ColorRect" parent="Background/FloorLayer" unique_id=753558844]
-offset_left = -100.0
-offset_top = 660.0
-offset_right = 1380.0
-offset_bottom = 720.0
-color = Color(0.12, 0.13, 0.18, 1)
-
-[node name="FloorEdge" type="ColorRect" parent="Background/FloorLayer" unique_id=2145675678]
-offset_left = -100.0
-offset_top = 660.0
-offset_right = 1380.0
-offset_bottom = 666.0
-color = Color(0.3, 0.55, 0.7, 1)
+[node name="FloorEdge" type="ColorRect" parent="Background/FloorEdgeLayer" unique_id=1396572359]
+offset_left = -95.0
+offset_top = 608.0
+offset_right = 1385.0
+offset_bottom = 610.0
+color = Color(0.45, 0.9, 0.55, 0.4)
 
 [node name="Player" type="CharacterBody2D" parent="." unique_id=1807225215]
 position = Vector2(200, 300)
@@ -274,11 +290,11 @@ shape = SubResource("RectangleShape2D_box")
 
 [node name="Moki" type="AnimatedSprite2D" parent="Player" unique_id=1300194710]
 texture_filter = 1
+scale = Vector2(1.2, 1.2)
 sprite_frames = ExtResource("23_mokiframes")
 animation = &"idle"
 autoplay = "idle"
 offset = Vector2(0, -12)
-scale = Vector2(1.2, 1.2)
 
 [node name="Flame" type="CPUParticles2D" parent="Player/Moki" unique_id=655713280]
 show_behind_parent = true
@@ -421,6 +437,7 @@ offset_left = -180.0
 offset_top = 10.0
 offset_right = 180.0
 offset_bottom = 64.0
+grow_horizontal = 2
 
 [node name="Label" type="Label" parent="HUD/BossBar" unique_id=273043401]
 layout_mode = 0
@@ -451,6 +468,8 @@ layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Dim" type="ColorRect" parent="HUD/GameOverPanel" unique_id=966622801]
 layout_mode = 0
@@ -485,6 +504,8 @@ layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Dim" type="ColorRect" parent="HUD/SlotPanel" unique_id=1923741094]
 layout_mode = 0

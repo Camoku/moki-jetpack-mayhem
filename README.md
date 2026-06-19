@@ -28,7 +28,7 @@ Open the folder in Godot 4.6+ and press **F5** (main scene is `Main.tscn`).
 ### Scene tree (`Main.tscn`)
 ```
 Main (Node2D)
-├── Background (ParallaxBackground)  — black space, 2 star layers, pinned floor
+├── Background (ParallaxBackground)  — parallax city skyline + scrolling tech floor
 ├── Player (CharacterBody2D)         — the Moki  [player.gd]
 │   ├── CollisionShape2D / Moki (AnimatedSprite2D, + Flame particles child) / Shield / Glow
 ├── Camera (Camera2D)                — world scroller  [camera.gd]
@@ -288,6 +288,17 @@ Real art lives in `res://sprites/`. We slice/play it with **`AnimatedSprite2D` +
   `Sprite` shows it (Nearest, ~0.52×); `obstacle.gd` gives each copy a random angle, flip, and slow
   tumble (rotating the *sprite* only, so the square hitbox is unchanged). Also covers Storm meteors
   and the Meteor Golem boss (same scene).
+
+- **City background + floor** — in `res://sprites/backgrounds/`. `city_bg.png` is a green
+  cyberpunk skyline shown on a slow parallax `CityLayer` (`motion_scale 0.4`); `city_floor.png`
+  is a tech-panel strip on a `FloorTexLayer` that scrolls at world speed. Both source images
+  don't tile on their own, so each is **mirror-doubled** (`image + its flip`) into a seamless
+  loop, then repeated with the layer's `motion_mirroring` (kept wider than the screen so the
+  wrap stays off-screen). The floor's surface was **raised** for a better view: the art top sits
+  at y610, `player.gd`'s `floor_y` is 578 (so the Moki rests on it), and the bottom spawn limits
+  (`max_y`, `coin_max_y`, storm/missile/orb/drone ranges) plus full-height hazards
+  (`vertical_laser`/`cave_wall` `area_bottom`, `bounce_orb` `bounce_bottom`) were nudged to match.
+  (The old starfield layers are still in the scene but hidden behind the opaque city.)
 
 Adding more art later follows the same recipe: drop PNGs in `res://sprites/`, set the filter,
 build a `SpriteFrames` (or just a `Sprite2D` for a single image), point a node at it. Beams,

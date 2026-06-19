@@ -38,11 +38,11 @@ extends CharacterBody2D
 # Screen limits. The camera is locked vertically to show world Y 0..720,
 # so these keep the Moki fully on screen:
 #   - ceiling_y 32  -> the Moki's top edge touches the roof (screen top).
-#   - floor_y  628  -> the Moki's bottom edge rests on the floor strip
-#                      (the floor surface sits at Y 660, half the 64px Moki
-#                       above that is 660 - 32 = 628).
+#   - floor_y  578  -> the Moki's bottom edge rests on the floor surface
+#                      (the raised floor top sits at Y 610, half the 64px Moki
+#                       above that is 610 - 32 = 578).
 @export var ceiling_y: float = 32.0       # Roof: highest the Moki can go.
-@export var floor_y: float = 628.0        # Floor: lowest the Moki can go.
+@export var floor_y: float = 578.0        # Floor: lowest the Moki can go (matches the floor art top).
 
 # How long the Moki is invincible (and flashing) right after a shield
 # breaks, giving you a moment to escape the hazard you just hit.
