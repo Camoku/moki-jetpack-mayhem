@@ -92,9 +92,11 @@ var dead: bool = false
 # Shield powerup state.
 var has_shield: bool = false
 var invuln: float = 0.0   # seconds of post-shield invincibility remaining
-# Dash speed-trail: _dash_t counts down the dash; _dash_trail_t paces the ghosts.
-var _dash_t: float = 0.0
-var _dash_trail_t: float = 0.0
+# Speed-trail: _trail_t is how long to keep dropping ghosts; _trail_pace_t paces
+# the gap between them. Driven by the Dash powerup and by boost rings.
+var _trail_t: float = 0.0
+var _trail_pace_t: float = 0.0
+var _trail_color: Color = Color(0.5, 1.0, 0.45, 0.5)   # Dash = lime; rings set aqua
 var _knockback: Vector2 = Vector2.ZERO   # transient bounce-back from hitting a boss core
 # The shield bubble's resting scale (set in the scene) + a timer that drives its
 # gentle breathing pulse + slow swirl while it's up.
@@ -248,8 +250,7 @@ func gain_powerup(kind: String) -> void:
 		"dash":
 			# An invincible rocket burst: i-frames + the world boosts past us.
 			invuln = maxf(invuln, dash_time)
-			_dash_t = dash_time          # drives the green speed-trail (below)
-			_dash_trail_t = 0.0
+			speed_trail(dash_time)       # green speed-trail for the whole dash
 			if camera != null and camera.has_method("add_boost"):
 				camera.add_boost(dash_time, dash_boost_mult)
 			if camera != null and camera.has_method("shake"):
@@ -258,6 +259,14 @@ func gain_powerup(kind: String) -> void:
 			timers["tiny"] = tiny_time
 		"secondchance":
 			_has_second_chance = true
+
+
+# Start (or extend) the green speed-trail for a few seconds. Used by the Dash
+# powerup (the whole dash) and by boost rings (a short whoosh on pass-through).
+func speed_trail(duration: float, color: Color = Color(0.5, 1.0, 0.45, 0.5)) -> void:
+	_trail_t = maxf(_trail_t, duration)
+	_trail_color = color
+	_trail_pace_t = 0.0   # drop the first ghost right away
 
 
 # Drop one fading green copy of the Moki's current frame at his current spot.
@@ -274,7 +283,7 @@ func _spawn_dash_afterimage() -> void:
 	ghost.flip_h = moki.flip_h
 	ghost.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST   # pixel art = Nearest
 	ghost.z_index = z_index - 1                                # draw behind the Moki
-	ghost.modulate = Color(0.5, 1.0, 0.45, 0.5)               # translucent green
+	ghost.modulate = _trail_color                            # lime (Dash) or aqua (ring)
 	get_parent().add_child(ghost)
 	# Fade it out then remove it.
 	var tw := ghost.create_tween()
@@ -312,11 +321,11 @@ func _update_powerups(delta: float) -> void:
 	# Dash speed-trail: while dashing, drop a fading green after-image of the Moki
 	# every few frames. Each ghost stays put in the world, so as we rocket forward
 	# they stream out behind us = a sense of speed.
-	if _dash_t > 0.0:
-		_dash_t -= delta
-		_dash_trail_t -= delta
-		if _dash_trail_t <= 0.0:
-			_dash_trail_t = dash_trail_interval
+	if _trail_t > 0.0:
+		_trail_t -= delta
+		_trail_pace_t -= delta
+		if _trail_pace_t <= 0.0:
+			_trail_pace_t = dash_trail_interval
 			_spawn_dash_afterimage()
 
 	# Live shield bubble: a gentle breathing pulse + a slow swirl so the sparkles
