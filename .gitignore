@@ -9,6 +9,11 @@
 *.pck
 *.zip
 
+# ...but DO publish the web build that GitHub Pages serves (overrides the
+# *.pck ignore above so the game data ships).
+!/docs/
+!/docs/**
+
 # OS / editor cruft
 .DS_Store
 Thumbs.db
