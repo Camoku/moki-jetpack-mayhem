@@ -1,0 +1,53 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://blg62jetvj53"]
+
+[ext_resource type="Texture2D" path="res://sprites/powerups/ghost.png" id="1"]
+
+[sub_resource type="AtlasTexture" id="g0"]
+atlas = ExtResource("1")
+region = Rect2(0, 0, 392, 389)
+
+[sub_resource type="AtlasTexture" id="g1"]
+atlas = ExtResource("1")
+region = Rect2(392, 0, 392, 389)
+
+[sub_resource type="AtlasTexture" id="g2"]
+atlas = ExtResource("1")
+region = Rect2(0, 389, 392, 389)
+
+[sub_resource type="AtlasTexture" id="g3"]
+atlas = ExtResource("1")
+region = Rect2(392, 389, 392, 389)
+
+[sub_resource type="AtlasTexture" id="g4"]
+atlas = ExtResource("1")
+region = Rect2(0, 778, 392, 389)
+
+[sub_resource type="AtlasTexture" id="g5"]
+atlas = ExtResource("1")
+region = Rect2(392, 778, 392, 389)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("g0")
+}, {
+"duration": 1.0,
+"texture": SubResource("g1")
+}, {
+"duration": 1.0,
+"texture": SubResource("g2")
+}, {
+"duration": 1.0,
+"texture": SubResource("g3")
+}, {
+"duration": 1.0,
+"texture": SubResource("g4")
+}, {
+"duration": 1.0,
+"texture": SubResource("g5")
+}],
+"loop": true,
+"name": &"float",
+"speed": 4.0
+}]

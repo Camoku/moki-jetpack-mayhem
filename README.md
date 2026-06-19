@@ -300,7 +300,7 @@ Real art lives in `res://sprites/`. We slice/play it with **`AnimatedSprite2D` +
   (`vertical_laser`/`cave_wall` `area_bottom`, `bounce_orb` `bounce_bottom`) were nudged to match.
   (The old starfield layers are still in the scene but hidden behind the opaque city.)
 
-- **Powerup art (Magnet, Doubler, Shield, Tiny, Dash)** — `sprites/powerups/`. `Powerup.tscn` is still "one scene,
+- **Powerup art (Magnet, Doubler, Shield, Tiny, Dash, Ghost)** — `sprites/powerups/`. `Powerup.tscn` is still "one scene,
   a `type` styles it": most powerups are coloured letter badges, but a type listed in
   `powerup.gd`'s **`SPRITE_ART`** table (data-driven: SpriteFrames + anim + glow colour + scale)
   hides the badge and shows the art on an `AnimatedSprite2D`, plus a dark contrast **disc**
@@ -309,7 +309,9 @@ Real art lives in `res://sprites/`. We slice/play it with **`AnimatedSprite2D` +
   disc/background). **Magnet** = `magnet_frames.tres` (4-frame `shimmer`); **Doubler** =
   `x2_frames.tres` (a single static `idle` icon); **Shield**, **Tiny**, and **Dash** =
   `shield_frames.tres` / `shrink_frames.tres` / `dash_frames.tres` (static `idle` icons - the Dash
-  one is an arrow chosen from a sheet of options). Adding more powerup art = one row in `SPRITE_ART`. (The source files were JPEGs with a
+  one is an arrow chosen from a sheet of options); **Ghost** = `ghost_frames.tres` (6-frame `float`,
+  cycling expressions). Sprite powerups also gently **bob + pulse their glow** (`powerup.gd` `_process`)
+  so they read as live pickups. Adding more powerup art = one row in `SPRITE_ART`. (The source files were JPEGs with a
   baked checkerboard "transparency": the magnet's gray was keyed out by colour; the x2 and shield
   have white details to keep, so their backgrounds were removed by a **flood-fill from the image
   edges** instead.)

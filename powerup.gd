@@ -14,6 +14,13 @@ extends Area2D
 
 var camera: Node2D
 
+# Sprite-art powerups gently float + pulse their glow so they read as live
+# pickups (set true in _apply_look for SPRITE_ART types).
+const BOB_SPEED := 3.0
+const BOB_AMP := 5.0
+var _is_art: bool = false
+var _bob_t: float = 0.0
+
 @onready var box: ColorRect = $Box
 @onready var label: Label = $Label
 @onready var sprite: AnimatedSprite2D = $Sprite
@@ -38,6 +45,7 @@ const SPRITE_ART := {
 	"shield": {"frames": "res://sprites/powerups/shield_frames.tres", "anim": "idle", "glow": Color(0.5, 1.0, 0.65), "scale": 0.08},
 	"tiny": {"frames": "res://sprites/powerups/shrink_frames.tres", "anim": "idle", "glow": Color(0.5, 1.0, 0.55), "scale": 0.12},
 	"dash": {"frames": "res://sprites/powerups/dash_frames.tres", "anim": "idle", "glow": Color(0.55, 1.0, 0.45), "scale": 0.5},
+	"ghost": {"frames": "res://sprites/powerups/ghost_frames.tres", "anim": "float", "glow": Color(0.5, 1.0, 0.6), "scale": 0.21},
 }
 
 
@@ -55,12 +63,10 @@ func _apply_look() -> void:
 		sprite.scale = Vector2(art["scale"], art["scale"])
 		sprite.visible = true
 		sprite.play(art["anim"])
+		_is_art = true
 		return
 
 	match type:
-		"ghost":
-			box.color = Color(0.85, 0.9, 1.0, 1.0)
-			label.text = "G"
 		"secondchance":
 			box.color = Color(1.0, 0.4, 0.6, 1.0)
 			label.text = "+1"
@@ -75,7 +81,16 @@ func _on_body_entered(body: Node) -> void:
 		queue_free()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	# Sprite powerups gently float up/down and pulse their glow, so they read as
+	# live collectibles rather than background art. (The dark disc stays put.)
+	if _is_art:
+		_bob_t += delta * BOB_SPEED
+		var dy := sin(_bob_t) * BOB_AMP
+		sprite.position.y = dy
+		glow.position.y = dy
+		glow.energy = 1.0 + 0.35 * (0.5 + 0.5 * sin(_bob_t * 1.4))
+
 	if camera == null:
 		camera = get_tree().get_first_node_in_group("camera")
 	if camera != null and global_position.x < camera.global_position.x - cleanup_behind:
