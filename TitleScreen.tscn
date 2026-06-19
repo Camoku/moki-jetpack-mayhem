@@ -1,0 +1,125 @@
+; ==========================================================
+;  TitleScreen.tscn - the start menu shown before a run
+; ==========================================================
+;  Reuses the in-game city parallax background (auto-scrolled), the Moki
+;  hovering on his jetpack flame, a neon title, live best-score stats and
+;  a pulsing "press to start" prompt. Any boost input loads Main.tscn.
+; ==========================================================
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://title_screen.gd" id="1"]
+[ext_resource type="Texture2D" path="res://sprites/backgrounds/city_bg.png" id="2"]
+[ext_resource type="Texture2D" path="res://sprites/backgrounds/city_floor.png" id="3"]
+[ext_resource type="SpriteFrames" path="res://sprites/moki_frames.tres" id="4"]
+
+[node name="TitleScreen" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Background" type="ParallaxBackground" parent="."]
+
+[node name="SpaceLayer" type="ParallaxLayer" parent="Background"]
+motion_scale = Vector2(0, 0)
+
+[node name="Space" type="ColorRect" parent="Background/SpaceLayer"]
+offset_left = -420.0
+offset_top = -300.0
+offset_right = 1720.0
+offset_bottom = 1020.0
+color = Color(0.02, 0.02, 0.06, 1)
+
+[node name="CityLayer" type="ParallaxLayer" parent="Background"]
+motion_scale = Vector2(0.4, 1)
+motion_mirroring = Vector2(2149.12, 0)
+
+[node name="City" type="Sprite2D" parent="Background/CityLayer"]
+texture_filter = 1
+scale = Vector2(0.92, 0.92)
+texture = ExtResource("2")
+centered = false
+
+[node name="FloorTexLayer" type="ParallaxLayer" parent="Background"]
+motion_scale = Vector2(1, 0)
+motion_mirroring = Vector2(1401.6, 0)
+
+[node name="FloorTex" type="Sprite2D" parent="Background/FloorTexLayer"]
+texture_filter = 1
+position = Vector2(-1, 610)
+scale = Vector2(0.6004281, 1.1000003)
+texture = ExtResource("3")
+centered = false
+
+[node name="FloorEdgeLayer" type="ParallaxLayer" parent="Background"]
+motion_scale = Vector2(0, 0)
+
+[node name="FloorEdge" type="ColorRect" parent="Background/FloorEdgeLayer"]
+offset_left = -95.0
+offset_top = 608.0
+offset_right = 1385.0
+offset_bottom = 612.0
+color = Color(0.45, 0.9, 0.55, 0.5)
+
+[node name="Moki" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(640, 436)
+scale = Vector2(1.7, 1.7)
+sprite_frames = ExtResource("4")
+animation = &"boost"
+offset = Vector2(0, -12)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Title" type="Label" parent="UI"]
+anchor_right = 1.0
+offset_top = 54.0
+offset_bottom = 190.0
+theme_override_colors/font_color = Color(0.55, 1, 0.5, 1)
+theme_override_colors/font_outline_color = Color(0.03, 0.12, 0.06, 1)
+theme_override_constants/outline_size = 12
+theme_override_font_sizes/font_size = 118
+text = "MOKI"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Subtitle" type="Label" parent="UI"]
+anchor_right = 1.0
+offset_top = 182.0
+offset_bottom = 256.0
+theme_override_colors/font_color = Color(0.85, 1, 0.8, 1)
+theme_override_colors/font_outline_color = Color(0.03, 0.12, 0.06, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 52
+text = "JETPACK MAYHEM"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Prompt" type="Label" parent="UI"]
+anchor_right = 1.0
+offset_top = 520.0
+offset_bottom = 560.0
+theme_override_colors/font_color = Color(1, 1, 0.7, 1)
+theme_override_colors/font_outline_color = Color(0.05, 0.05, 0.02, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 32
+text = "PRESS SPACE OR CLICK TO START"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Stats" type="Label" parent="UI"]
+anchor_right = 1.0
+offset_top = 636.0
+offset_bottom = 668.0
+theme_override_colors/font_color = Color(0.7, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Controls" type="Label" parent="UI"]
+anchor_right = 1.0
+offset_top = 676.0
+offset_bottom = 704.0
+theme_override_colors/font_color = Color(0.6, 0.7, 0.75, 1)
+theme_override_font_sizes/font_size = 17
+text = "SPACE / CLICK = boost      A D  or  ← →  = move      M = mute"
+horizontal_alignment = 1
+vertical_alignment = 1

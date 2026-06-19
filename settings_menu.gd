@@ -14,6 +14,7 @@ var _menu_root: Control          # the dim + panel (hidden until opened)
 var _sliders: Dictionary = {}    # bus name -> HSlider
 var _pcts: Dictionary = {}       # bus name -> Label
 var _mute_btn: Button
+var _exit_btn: Button            # "Exit to Title" - only shown during a run
 
 
 func _ready() -> void:
@@ -94,6 +95,12 @@ func _build() -> void:
 	resume.pressed.connect(close)
 	vb.add_child(resume)
 
+	_exit_btn = Button.new()
+	_exit_btn.text = "Exit to Title"
+	_exit_btn.focus_mode = Control.FOCUS_NONE
+	_exit_btn.pressed.connect(_on_exit)
+	vb.add_child(_exit_btn)
+
 
 # One labelled volume row: "Master  [=====slider=====]  80%"
 func _add_slider(parent: VBoxContainer, bus: String) -> void:
@@ -134,6 +141,18 @@ func _on_mute() -> void:
 	_refresh_mute()
 
 
+# Abandon the current run and go back to the start menu.
+func _on_exit() -> void:
+	Audio.play("select")
+	close()                                              # unpauses the tree
+	get_tree().change_scene_to_file("res://TitleScreen.tscn")
+
+
+# We're "in a run" if the gameplay spawner exists (it isn't on the title screen).
+func _in_run() -> bool:
+	return get_tree().get_first_node_in_group("spawner") != null
+
+
 func _refresh_mute() -> void:
 	_mute_btn.text = "Muted: ON" if Audio.muted else "Muted: off"
 
@@ -161,6 +180,7 @@ func open() -> void:
 		return
 	_open = true
 	_menu_root.visible = true
+	_exit_btn.visible = _in_run()   # only offer "Exit to Title" mid-run
 	_refresh()
 	get_tree().paused = true
 	Audio.play("select")
