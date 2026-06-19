@@ -2,7 +2,7 @@
 ; shimmer frames, each 392x584). One looping animation, "shimmer".
 [gd_resource type="SpriteFrames" load_steps=6 format=3 uid="uid://b8magnetframes01"]
 
-[ext_resource type="Texture2D" uid="uid://cvdralaga6mau" path="res://sprites/powerups/magnet.png" id="1"]
+[ext_resource type="Texture2D" path="res://sprites/powerups/magnet.png" id="1"]
 
 [sub_resource type="AtlasTexture" id="m0"]
 atlas = ExtResource("1")

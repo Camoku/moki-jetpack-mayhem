@@ -300,14 +300,17 @@ Real art lives in `res://sprites/`. We slice/play it with **`AnimatedSprite2D` +
   (`vertical_laser`/`cave_wall` `area_bottom`, `bounce_orb` `bounce_bottom`) were nudged to match.
   (The old starfield layers are still in the scene but hidden behind the opaque city.)
 
-- **Magnet powerup** — `sprites/powerups/magnet.png` (a 2×2 grid of 4 shimmer frames) →
-  `magnet_frames.tres` (anim `shimmer`). `Powerup.tscn` is still "one scene, a `type` styles
-  it": most powerups are coloured letter badges, but `powerup.gd`'s `magnet` case hides the
-  badge and shows an `AnimatedSprite2D` instead, plus a dark contrast **disc** (`Backing`) and a
-  green **glow** (`PointLight2D`) so it pops off the green city. The magnet sprite's
-  `light_mask = 2` keeps the glow from tinting the magnet itself (the halo only lights the
-  disc/background). The source file was a JPEG with a baked checkerboard "transparency", so the
-  gray background was keyed out to real alpha before import.
+- **Powerup art (Magnet, Doubler)** — `sprites/powerups/`. `Powerup.tscn` is still "one scene,
+  a `type` styles it": most powerups are coloured letter badges, but a type listed in
+  `powerup.gd`'s **`SPRITE_ART`** table (data-driven: SpriteFrames + anim + glow colour + scale)
+  hides the badge and shows the art on an `AnimatedSprite2D`, plus a dark contrast **disc**
+  (`Backing`) and a **glow** (`PointLight2D`) so it pops off the green city. The sprite's
+  `light_mask = 2` keeps the glow from tinting the art itself (the halo only lights the
+  disc/background). **Magnet** = `magnet_frames.tres` (4-frame `shimmer`); **Doubler** =
+  `x2_frames.tres` (a single static `idle` icon). Adding more powerup art = one row in
+  `SPRITE_ART`. (Both source files were JPEGs with a baked checkerboard "transparency": the
+  magnet's gray was keyed out by colour; the x2's white text had to be kept, so its background
+  was removed by a **flood-fill from the image edges** instead.)
 
 Adding more art later follows the same recipe: drop PNGs in `res://sprites/`, set the filter,
 build a `SpriteFrames` (or just a `Sprite2D` for a single image), point a node at it. Beams,
