@@ -35,6 +35,7 @@ func _ready() -> void:
 const SPRITE_ART := {
 	"magnet": {"frames": "res://sprites/powerups/magnet_frames.tres", "anim": "shimmer", "glow": Color(0.4, 1.0, 0.7), "scale": 0.16},
 	"doubler": {"frames": "res://sprites/powerups/x2_frames.tres", "anim": "idle", "glow": Color(0.5, 1.0, 0.45), "scale": 0.17},
+	"shield": {"frames": "res://sprites/powerups/shield_frames.tres", "anim": "idle", "glow": Color(0.5, 1.0, 0.65), "scale": 0.08},
 }
 
 
@@ -55,9 +56,6 @@ func _apply_look() -> void:
 		return
 
 	match type:
-		"shield":
-			box.color = Color(0.3, 0.7, 1.0, 1.0)
-			label.text = "S"
 		"ghost":
 			box.color = Color(0.85, 0.9, 1.0, 1.0)
 			label.text = "G"
