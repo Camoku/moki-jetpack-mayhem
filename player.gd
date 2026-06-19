@@ -59,6 +59,7 @@ extends CharacterBody2D
 # --- New powerups ---
 @export var dash_time: float = 2.0          # Dash: seconds of invincible rocket-boost.
 @export var dash_boost_mult: float = 2.6    # Dash: how hard the world rockets past.
+@export var dash_trail_interval: float = 0.045  # Dash: gap between speed-trail ghosts.
 @export var tiny_scale: float = 0.55        # Tiny Moki: shrink factor (smaller = slip through more).
 @export var tiny_time: float = 6.0          # Tiny Moki: how long you stay small.
 @export var second_chance_invuln: float = 1.6  # Second Chance: i-frames granted by a revive.
@@ -91,6 +92,9 @@ var dead: bool = false
 # Shield powerup state.
 var has_shield: bool = false
 var invuln: float = 0.0   # seconds of post-shield invincibility remaining
+# Dash speed-trail: _dash_t counts down the dash; _dash_trail_t paces the ghosts.
+var _dash_t: float = 0.0
+var _dash_trail_t: float = 0.0
 var _knockback: Vector2 = Vector2.ZERO   # transient bounce-back from hitting a boss core
 # The shield bubble's resting scale (set in the scene) + a timer that drives its
 # gentle breathing pulse + slow swirl while it's up.
@@ -244,12 +248,38 @@ func gain_powerup(kind: String) -> void:
 		"dash":
 			# An invincible rocket burst: i-frames + the world boosts past us.
 			invuln = maxf(invuln, dash_time)
+			_dash_t = dash_time          # drives the green speed-trail (below)
+			_dash_trail_t = 0.0
 			if camera != null and camera.has_method("add_boost"):
 				camera.add_boost(dash_time, dash_boost_mult)
+			if camera != null and camera.has_method("shake"):
+				camera.shake(8.0)        # a punchy launch kick
 		"tiny":
 			timers["tiny"] = tiny_time
 		"secondchance":
 			_has_second_chance = true
+
+
+# Drop one fading green copy of the Moki's current frame at his current spot.
+# Added to our PARENT (the world), so it stays behind as we dash ahead.
+func _spawn_dash_afterimage() -> void:
+	if moki.sprite_frames == null:
+		return
+	var ghost := Sprite2D.new()
+	ghost.texture = moki.sprite_frames.get_frame_texture(moki.animation, moki.frame)
+	ghost.global_position = moki.global_position
+	ghost.rotation = moki.rotation
+	ghost.scale = moki.scale
+	ghost.offset = moki.offset
+	ghost.flip_h = moki.flip_h
+	ghost.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST   # pixel art = Nearest
+	ghost.z_index = z_index - 1                                # draw behind the Moki
+	ghost.modulate = Color(0.5, 1.0, 0.45, 0.5)               # translucent green
+	get_parent().add_child(ghost)
+	# Fade it out then remove it.
+	var tw := ghost.create_tween()
+	tw.tween_property(ghost, "modulate:a", 0.0, 0.35)
+	tw.tween_callback(ghost.queue_free)
 
 
 # True while the named timed powerup is running.
@@ -278,6 +308,16 @@ func powerup_status() -> String:
 func _update_powerups(delta: float) -> void:
 	if invuln > 0.0:
 		invuln -= delta
+
+	# Dash speed-trail: while dashing, drop a fading green after-image of the Moki
+	# every few frames. Each ghost stays put in the world, so as we rocket forward
+	# they stream out behind us = a sense of speed.
+	if _dash_t > 0.0:
+		_dash_t -= delta
+		_dash_trail_t -= delta
+		if _dash_trail_t <= 0.0:
+			_dash_trail_t = dash_trail_interval
+			_spawn_dash_afterimage()
 
 	# Live shield bubble: a gentle breathing pulse + a slow swirl so the sparkles
 	# orbit, instead of a dead static sphere.
