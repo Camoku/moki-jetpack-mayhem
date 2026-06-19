@@ -27,6 +27,11 @@ extends CharacterBody2D
 @export var move_speed: float = 460.0     # Left/Right flying speed within the screen.
 @export var edge_margin: float = 36.0     # Keep this far from the screen's left/right edges.
 
+# --- Look / juice (the animated Moki sprite) ---
+@export var max_tilt: float = 0.35        # Most the Moki tilts (radians, ~20°) when rising/falling.
+@export var tilt_ref_speed: float = 600.0 # Vertical speed that maps to a full tilt.
+@export var tilt_smooth: float = 10.0     # How quickly the tilt eases toward its target (bigger = snappier).
+
 @export var max_fall_speed: float = 900.0 # Cap on how fast we can plummet.
 @export var max_rise_speed: float = 900.0 # Cap on how fast the jetpack lifts us.
 
@@ -62,7 +67,7 @@ extends CharacterBody2D
 # A reference to the flame node so we can show/hide it. The $ is shorthand
 # for get_node(): $Flame finds the child named "Flame". @onready waits until
 # the node is actually in the scene before grabbing it.
-@onready var flame: ColorRect = $Flame
+@onready var flame: CPUParticles2D = $Moki/Flame
 
 # The shield "bubble" visual, shown only while a shield is active.
 @onready var shield_visual: ColorRect = $Shield
@@ -72,6 +77,11 @@ extends CharacterBody2D
 # at full blackout.
 @onready var glow: PointLight2D = $Glow
 const GLOW_MAX := 1.1
+
+# The animated Moki body (AnimatedSprite2D). We swap its idle/boost animation and
+# tilt it for juice. It's a child of the Player, so we tilt IT (not the Player),
+# keeping the collision box square.
+@onready var moki: AnimatedSprite2D = $Moki
 
 # Becomes true the moment we crash, so we only crash once.
 var dead: bool = false
@@ -139,8 +149,8 @@ func _physics_process(delta: float) -> void:
 	if boosting:
 		velocity.y -= boost_power * delta
 
-	# Show the jetpack flame only while we are actively boosting.
-	flame.visible = boosting
+	# Fire the jetpack exhaust only while we are actively boosting.
+	flame.emitting = boosting
 
 	# Keep the up/down speed inside friendly limits.
 	velocity.y = clamp(velocity.y, -max_rise_speed, max_fall_speed)
@@ -177,6 +187,23 @@ func _physics_process(delta: float) -> void:
 		position.y = floor_y
 		if velocity.y > 0.0:
 			velocity.y = 0.0
+
+	# Animate + tilt the Moki body for juice (idle vs boost, nose up/down).
+	_update_moki_look(delta, boosting)
+
+
+# Update the Moki's animation + tilt. Boosting plays the energetic "boost" frames;
+# otherwise the calm "idle" loop. The body tilts nose-UP while rising and nose-DOWN
+# while falling. We rotate the SPRITE (a child), never the Player, so the collision
+# box stays square. The Moki art already faces right, so no flipping is needed.
+func _update_moki_look(delta: float, boosting: bool) -> void:
+	var want := "boost" if boosting else "idle"
+	if moki.animation != want:
+		moki.play(want)
+	# +velocity.y points DOWN, so a positive value tilts the nose down. Map the
+	# vertical speed to [-1, 1] of our reference, scale by max_tilt, then ease toward it.
+	var target: float = clampf(velocity.y / tilt_ref_speed, -1.0, 1.0) * max_tilt
+	moki.rotation = lerp_angle(moki.rotation, target, clampf(delta * tilt_smooth, 0.0, 1.0))
 
 
 # gain_powerup() is called by a powerup pickup when the Moki grabs it.
@@ -318,7 +345,7 @@ func crash() -> void:
 	# No shield - this is a real crash.
 	dead = true
 	set_physics_process(false)
-	flame.visible = false
+	flame.emitting = false   # cut the thrust; any lingering sparks fade out
 
 	# Hand off to the HUD. It decides what happens next: if we collected any spin
 	# tokens this run, it opens the SLOT MACHINE (where a "revive" can bring us

@@ -1,0 +1,36 @@
+; SpriteFrames for a spinning gold coin (6 separate PNG frames: face -> edge -> face).
+; One looping animation, "spin". Used by Coin.tscn's AnimatedSprite2D.
+[gd_resource type="SpriteFrames" load_steps=7 format=3 uid="uid://b8coinframes001"]
+
+[ext_resource type="Texture2D" uid="uid://0xriuelefrsn" path="res://sprites/coins/coin1.png" id="1"]
+[ext_resource type="Texture2D" uid="uid://bg22i7ky7rpii" path="res://sprites/coins/coin2.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://bonmv2vq7qxhr" path="res://sprites/coins/coin3.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://ddbly1emvp305" path="res://sprites/coins/coin4.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://d17qjvekwd0yy" path="res://sprites/coins/coin5.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://cytwflpbhddrh" path="res://sprites/coins/coin6.png" id="6"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6")
+}],
+"loop": true,
+"name": &"spin",
+"speed": 12.0
+}]

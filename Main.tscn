@@ -33,6 +33,8 @@
 [ext_resource type="PackedScene" path="res://Fireworks.tscn" id="20_fireworks"]
 [ext_resource type="PackedScene" path="res://Chest.tscn" id="21_chest"]
 [ext_resource type="PackedScene" path="res://SpinToken.tscn" id="22_spintoken"]
+[ext_resource type="SpriteFrames" path="res://sprites/moki_frames.tres" id="23_mokiframes"]
+[ext_resource type="Script" path="res://jet_flame.gd" id="24_jetflame"]
 [ext_resource type="Script" path="res://background.gd" id="2_bg"]
 [ext_resource type="PackedScene" path="res://Obstacle.tscn" id="3_obstacle"]
 [ext_resource type="Script" path="res://spawner.gd" id="4_spawner"]
@@ -50,16 +52,6 @@
 ; The Moki's physical collision box: a 64x64 rectangle.
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_box"]
 size = Vector2(64, 64)
-
-; A tiny color ramp that is orange at BOTH ends -> a flat orange texture.
-[sub_resource type="Gradient" id="Gradient_orange"]
-colors = PackedColorArray(1, 0.55, 0.1, 1, 1, 0.55, 0.1, 1)
-
-; A 64x64 solid-orange texture for the Sprite2D (no image file needed).
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_orange"]
-gradient = SubResource("Gradient_orange")
-width = 64
-height = 64
 
 ; A soft round glow (white centre -> transparent edge) for the Moki's faint
 ; "I can just about see myself" light during a blackout.
@@ -333,27 +325,29 @@ script = ExtResource("1_player")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
 shape = SubResource("RectangleShape2D_box")
 
-[node name="Sprite2D" type="Sprite2D" parent="Player"]
-texture = SubResource("GradientTexture2D_orange")
+; The Moki's animated body (replaces the old orange Sprite2D). It plays frames
+; sliced from the sprite sheet via moki_frames.tres. texture_filter = 1 (Nearest)
+; keeps the pixel art crisp when scaled/rotated. The character sits at the BOTTOM
+; of each 128x97 frame, so offset.y lifts it ~12px to centre it on the 64x64
+; collision box. autoplay starts the idle loop; player.gd swaps idle/boost and
+; tilts THIS node (not the Player) for juice, so the collision box stays upright.
+[node name="Moki" type="AnimatedSprite2D" parent="Player"]
+texture_filter = 1
+sprite_frames = ExtResource("23_mokiframes")
+animation = &"idle"
+autoplay = "idle"
+offset = Vector2(0, -12)
 
-; The jetpack: a small grey tank mounted on the Moki's back (left side,
-; since the Moki always faces right).
-[node name="Jetpack" type="ColorRect" parent="Player"]
-offset_left = -46.0
-offset_top = -18.0
-offset_right = -28.0
-offset_bottom = 22.0
-color = Color(0.45, 0.45, 0.52, 1)
-
-; The flame shoots out the bottom of the jetpack. It starts hidden and
-; player.gd flips it visible only while the boost button is held.
-[node name="Flame" type="ColorRect" parent="Player"]
-visible = false
-offset_left = -44.0
-offset_top = 22.0
-offset_right = -30.0
-offset_bottom = 60.0
-color = Color(1, 0.7, 0.1, 1)
+; The jetpack flame: a soft PARTICLE exhaust (jet_flame.gd configures it) streaming
+; down from under the Moki. It's a CHILD of the Moki sprite, so it tilts WITH the
+; body (thrust swings down-and-back as you rise). show_behind_parent draws it behind
+; the Moki so it emerges from underneath instead of covering the belly. position is
+; the emission point: just under the body, a touch back. player.gd toggles emitting
+; while boost is held. (The old grey jetpack box + flat orange rect are gone.)
+[node name="Flame" type="CPUParticles2D" parent="Player/Moki"]
+show_behind_parent = true
+position = Vector2(2, 14)
+script = ExtResource("24_jetflame")
 
 ; A translucent force-field bubble, shown only while a Shield is active.
 [node name="Shield" type="ColorRect" parent="Player"]

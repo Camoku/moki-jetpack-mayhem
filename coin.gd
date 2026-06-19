@@ -25,12 +25,17 @@ const GLOW_MAX := 2.2
 const VISION_NEAR := 120.0
 const VISION_FAR := 280.0
 @onready var glow: PointLight2D = $Glow
+@onready var sprite: AnimatedSprite2D = $Sprite
 var player: Node2D
 
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	add_to_group("coin")   # so the spawner can keep asteroids off us
+	# Start each coin on a random frame (and a slightly random speed) so a whole
+	# row of coins spins out of sync instead of flashing in lock-step.
+	sprite.frame = randi() % 6
+	sprite.speed_scale = randf_range(0.85, 1.15)
 
 
 func _on_body_entered(body: Node) -> void:

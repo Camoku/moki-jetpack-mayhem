@@ -30,7 +30,7 @@ Open the folder in Godot 4.6+ and press **F5** (main scene is `Main.tscn`).
 Main (Node2D)
 ├── Background (ParallaxBackground)  — black space, 2 star layers, pinned floor
 ├── Player (CharacterBody2D)         — the Moki  [player.gd]
-│   ├── CollisionShape2D / Sprite2D / Jetpack / Flame / Shield (bubble)
+│   ├── CollisionShape2D / Moki (AnimatedSprite2D, + Flame particles child) / Shield / Glow
 ├── Camera (Camera2D)                — world scroller  [camera.gd]
 ├── ObstacleSpawner (Node2D)         — spawns everything  [spawner.gd]
 └── HUD (CanvasLayer)                — UI  [hud.gd]
@@ -43,7 +43,8 @@ Main (Node2D)
 ### Core
 | File | What it does |
 |---|---|
-| `player.gd` | Moki movement (gravity, jetpack, free left/right), crash, powerup effects |
+| `player.gd` | Moki movement (gravity, jetpack, free left/right), crash, powerup effects, sprite animation + tilt |
+| `jet_flame.gd` | The jetpack exhaust — a `CPUParticles2D` (configured in code) that streams down while boosting |
 | `camera.gd` | Constant world scroll + a temporary **boost gear** (`current_speed()`) + screen `shake()` |
 | `spawner.gd` | Wave/event director: spawns hazards, pickups, events; runs progression + celebrations |
 | `hud.gd` | Distance/coins/multiplier, status line, banners, boss bar, screen `flash()`, game-over screen |
@@ -69,7 +70,7 @@ Main (Node2D)
 ### Pickups
 | Scene / Script | Pickup |
 |---|---|
-| `Coin.tscn` / `coin.gd` | Coin — banks currency + builds the end-of-run multiplier |
+| `Coin.tscn` / `coin.gd` | Coin — animated spinning gold coin; banks currency + builds the end-of-run multiplier |
 | `Powerup.tscn` / `powerup.gd` | One scene, `type` picks the effect: shield / magnet / doubler / ghost / dash / tiny / secondchance |
 | `BoostRing.tscn` / `ring.gd` | Fly through for a speed boost |
 | `Chest.tscn` / `chest.gd` | Reward chest — fly over it to bank coins + a powerup (every reward drops one) |
@@ -264,6 +265,29 @@ The "shield next run" carry reuses the same **autoload-survives-reload** idea as
 
 ---
 
+## Art & animation (sprites)
+Real art lives in `res://sprites/`. We slice/play it with **`AnimatedSprite2D` + `SpriteFrames`**
+(the beginner-friendly way to do frame animation — no `AnimationPlayer` needed):
+- **The Moki** — `sprites/moki_0653_sprite_sheet.png` is one row of 24 frames (128×97).
+  `sprites/moki_frames.tres` slices it into two looping animations: **`idle`** (frames 0–15,
+  calm bob) and **`boost`** (frames 16–23, arms spread). The Player's `Moki` node plays them;
+  `player.gd` switches idle↔boost and **tilts the sprite** (`max_tilt`/`tilt_ref_speed`/
+  `tilt_smooth`) nose-up while rising, nose-down while falling. We tilt the *sprite*, not the
+  Player, so the collision box stays square. `texture_filter = Nearest` keeps the pixel art crisp.
+- **The jetpack flame** — `jet_flame.gd` on a `CPUParticles2D` under the Moki: soft round sparks
+  streaming downward, tilting with the body, drawn *behind* it. `player.gd` toggles `emitting`
+  with the boost button.
+- **Coins** — `sprites/coins/coin1..6.png` are 6 spin frames; `sprites/coins/coin_frames.tres`
+  is the looping `spin`. `Coin.tscn`'s `Sprite` plays it (smooth art, so default Linear filter,
+  scaled ~0.25 to coin size); `coin.gd` randomises each coin's start frame + speed so a row
+  doesn't spin in lock-step.
+
+Adding more art later follows the same recipe: drop PNGs in `res://sprites/`, set the filter,
+build a `SpriteFrames`, point an `AnimatedSprite2D` at it. Everything else (asteroids, beams,
+powerups, the HUD, bosses) is still placeholder rectangles.
+
+---
+
 ## Save data
 `user://save.cfg` (a `ConfigFile`) under `%APPDATA%/Godot/app_userdata/Moki Jetpack Mayhem/`.
 Stores `high_score`, `best_distance`, `coins`. Delete it to reset progress.
@@ -271,4 +295,5 @@ Stores `high_score`, `best_distance`, `coins`. Delete it to reset progress.
 ## Ideas not yet built
 - **Upgrade store** — spend banked coins on permanent boosts (the big next feature).
 - More events: **Wind Gusts**, **Reverse-gravity zone**; more mini-bosses.
-- Sound/juice (screen shake, particles), real Moki art.
+- Sound/audio. (The Moki, its jetpack flame, and coins now have real art + animation;
+  asteroids/beams/powerups/HUD are still placeholder rectangles.)
