@@ -111,7 +111,8 @@ playtesting in places (noted per item).
 - [ ] **More juice/feel** — *(celebration bursts + shake + fireworks done)*; still want crash
       shake + crash particle burst + jetpack trail, and a **combo/streak** meter
 - [ ] **Audio** — jetpack whoosh, coin ding, crash boom, event stingers, music
-- [~] **Real art** — *in progress.* Done: the **Moki** (24-frame `AnimatedSprite2D`,
+- [~] **Real art** — *in progress.* Floating **laser beams** now use real art too (metal caps +
+      an animated crackling beam, varied sizes). Done: the **Moki** (24-frame `AnimatedSprite2D`,
       idle/run/boost + velocity tilt), a **particle jetpack flame** (`jet_flame.gd`),
       **spinning coins** (6-frame 32×32 sheet, desynced), **asteroids** (rock sprite +
       random tumble; also Storm meteors / Golem boss), and a **parallax city background +

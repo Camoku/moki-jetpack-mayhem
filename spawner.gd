@@ -1303,9 +1303,14 @@ func _spawn_crusher() -> void:
 func _spawn_beam() -> void:
 	var b := beam_obstacle_scene.instantiate()
 	b.horizontal = randf() < 0.5
-	b.beam_length = randf_range(170.0, 240.0)
+	b.beam_length = randf_range(130.0, 240.0)
+	# Vary the overall size (thinner beam + smaller caps) for some too, so beams
+	# come in a mix of chunky and dainty. Scale the instance's default thickness.
+	var size_scale := randf_range(0.6, 1.0)
+	b.beam_thickness *= size_scale
+	b.block_size *= size_scale
 	# Use the beam's own (large) radius so its WHOLE length stays clear of
-	# pickups - not just its centre point.
+	# pickups - not just its centre point (read AFTER sizing, since it uses block_size).
 	var my_r: float = b.clear_radius()
 	var spawn_x := camera.global_position.x + spawn_ahead
 	var y := randf_range(190.0, 470.0)

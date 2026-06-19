@@ -1,0 +1,41 @@
+; SpriteFrames for the laser beam - 4 segments of the energy beam that cycle to
+; make it crackle/flicker. Sliced from lazer_beam.png (4 cells of 100x210).
+[gd_resource type="SpriteFrames" load_steps=6 format=3 uid="uid://b8lazerbeam001"]
+
+[ext_resource type="Texture2D" path="res://sprites/hazards/lazer_beam.png" id="1"]
+
+[sub_resource type="AtlasTexture" id="b0"]
+atlas = ExtResource("1")
+region = Rect2(0, 0, 100, 210)
+
+[sub_resource type="AtlasTexture" id="b1"]
+atlas = ExtResource("1")
+region = Rect2(100, 0, 100, 210)
+
+[sub_resource type="AtlasTexture" id="b2"]
+atlas = ExtResource("1")
+region = Rect2(200, 0, 100, 210)
+
+[sub_resource type="AtlasTexture" id="b3"]
+atlas = ExtResource("1")
+region = Rect2(300, 0, 100, 210)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("b0")
+}, {
+"duration": 1.0,
+"texture": SubResource("b1")
+}, {
+"duration": 1.0,
+"texture": SubResource("b2")
+}, {
+"duration": 1.0,
+"texture": SubResource("b3")
+}],
+"loop": true,
+"name": &"crackle",
+"speed": 12.0
+}]

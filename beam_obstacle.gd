@@ -13,16 +13,16 @@ extends Area2D
 
 @export var horizontal: bool = false        # set by the spawner
 @export var beam_length: float = 220.0      # length of the bar (set by spawner)
-@export var beam_thickness: float = 18.0    # how thick the red line is
-@export var block_size: float = 34.0        # the grey end caps
+@export var beam_thickness: float = 38.0    # how thick the green beam is
+@export var block_size: float = 46.0        # the metal end caps (also the hitbox thickness)
 @export var cleanup_behind: float = 760.0
 
 var camera: Node2D
 
 @onready var col: CollisionShape2D = $CollisionShape2D
-@onready var beam: ColorRect = $Beam
-@onready var cap1: ColorRect = $Cap1
-@onready var cap2: ColorRect = $Cap2
+@onready var beam: AnimatedSprite2D = $Beam
+@onready var cap1: Sprite2D = $Cap1
+@onready var cap2: Sprite2D = $Cap2
 
 
 func _ready() -> void:
@@ -32,31 +32,31 @@ func _ready() -> void:
 
 
 func _build() -> void:
+	# We always build a HORIZONTAL bar, then rotate the whole node a quarter turn
+	# for a vertical one - so the sprite layout + collision are written just once.
 	var half := beam_length * 0.5
+
+	# Beam: stretch the crackling energy slice to span the length, scaled to
+	# beam_thickness tall. Start on a random frame so beams don't flicker in sync.
+	var btex := beam.sprite_frames.get_frame_texture(&"crackle", 0)
+	beam.scale = Vector2(beam_length / float(btex.get_width()),
+		beam_thickness / float(btex.get_height()))
+	beam.position = Vector2.ZERO
+	beam.frame = randi() % beam.sprite_frames.get_frame_count(&"crackle")
+
+	# Caps: one metal emitter at each end, scaled (uniform) to block_size tall.
+	var cap_scale := block_size / float(cap1.texture.get_height())
+	cap1.scale = Vector2(cap_scale, cap_scale)
+	cap2.scale = Vector2(cap_scale, cap_scale)
+	cap1.position = Vector2(-half, 0.0)
+	cap2.position = Vector2(half, 0.0)
+
+	# Deadly box covering the whole bar (cap-height thick, like before).
 	var rect := RectangleShape2D.new()
-
-	if horizontal:
-		# Red line runs left-right; caps sit at the left and right ends.
-		_set_rect(beam, -half, -beam_thickness * 0.5, half, beam_thickness * 0.5)
-		_set_rect(cap1, -half - block_size * 0.5, -block_size * 0.5, -half + block_size * 0.5, block_size * 0.5)
-		_set_rect(cap2, half - block_size * 0.5, -block_size * 0.5, half + block_size * 0.5, block_size * 0.5)
-		rect.size = Vector2(beam_length + block_size, maxf(beam_thickness, block_size))
-	else:
-		# Red line runs up-down; caps sit at the top and bottom ends.
-		_set_rect(beam, -beam_thickness * 0.5, -half, beam_thickness * 0.5, half)
-		_set_rect(cap1, -block_size * 0.5, -half - block_size * 0.5, block_size * 0.5, -half + block_size * 0.5)
-		_set_rect(cap2, -block_size * 0.5, half - block_size * 0.5, block_size * 0.5, half + block_size * 0.5)
-		rect.size = Vector2(maxf(beam_thickness, block_size), beam_length + block_size)
-
+	rect.size = Vector2(beam_length + block_size, maxf(beam_thickness, block_size))
 	col.shape = rect
 
-
-# Small helper to position a ColorRect by its four edges (local space).
-func _set_rect(r: ColorRect, left: float, top: float, right: float, bottom: float) -> void:
-	r.offset_left = left
-	r.offset_top = top
-	r.offset_right = right
-	r.offset_bottom = bottom
+	rotation = 0.0 if horizontal else PI * 0.5
 
 
 func _on_body_entered(body: Node) -> void:

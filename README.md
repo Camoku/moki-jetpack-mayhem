@@ -59,7 +59,7 @@ Main (Node2D)
 | `Obstacle.tscn` / `obstacle.gd` | Asteroid — animated rock sprite (random tumble); can drift; storm meteors use `extra_speed` |
 | `VerticalLaser.tscn` / `vertical_laser.gd` | Solid full-height laser, screen-locked, charge→fire |
 | `HorizontalLaser.tscn` / `horizontal_laser.gd` | Solid full-width laser, charge→fire |
-| `BeamObstacle.tscn` / `beam_obstacle.gd` | Floating capped laser bar (H or V) |
+| `BeamObstacle.tscn` / `beam_obstacle.gd` | Floating capped laser bar — metal caps + an **animated crackling** green beam (H or V, varied sizes) |
 | `Missile.tscn` / `missile.gd` | Warns ("!") at the right edge, then strikes left |
 | `CaveWall.tscn` / `cave_wall.gd` | One tunnel slice (top+bottom walls + gap) for the Cave event |
 | `BounceOrb.tscn` / `bounce_orb.gd` | Ball that drifts left while bouncing roof↔floor (a zig-zag) |
