@@ -1,6 +1,4 @@
-; SpriteFrames for the laser beam - 4 segments of the energy beam that cycle to
-; make it crackle/flicker. Sliced from lazer_beam.png (4 cells of 100x210).
-[gd_resource type="SpriteFrames" load_steps=6 format=3 uid="uid://b8lazerbeam001"]
+[gd_resource type="SpriteFrames" format=3 uid="uid://bvc7dsn3n6441"]
 
 [ext_resource type="Texture2D" path="res://sprites/hazards/lazer_beam.png" id="1"]
 

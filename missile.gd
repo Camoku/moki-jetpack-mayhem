@@ -22,16 +22,16 @@ var deadly: bool = false
 var _t: float = 0.0
 var camera: Node2D
 
-@onready var missile_body: ColorRect = $Body
-@onready var tip: ColorRect = $Tip
+@onready var missile_sprite: AnimatedSprite2D = $Sprite   # the missile art (hidden until launch)
+@onready var glow: PointLight2D = $Glow   # the red danger glow (shown while flying)
 @onready var warn_bg: Panel = $WarnBg   # the circular "!" badge
 
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	add_to_group("missile")   # so the Choice Gate can clear us when a RISK run is survived
-	missile_body.visible = false
-	tip.visible = false
+	missile_sprite.visible = false
+	glow.visible = false
 	warn_bg.visible = true
 
 
@@ -50,6 +50,7 @@ func _process(delta: float) -> void:
 				_launch()
 		State.FLYING:
 			global_position.x -= missile_speed * delta
+			glow.energy = 1.0 + 0.5 * (0.5 + 0.5 * sin(_t * 18.0))   # fast danger flicker
 			if camera != null and global_position.x < camera.global_position.x - cleanup_behind:
 				queue_free()
 
@@ -58,8 +59,8 @@ func _launch() -> void:
 	state = State.FLYING
 	deadly = true
 	warn_bg.visible = false
-	missile_body.visible = true
-	tip.visible = true
+	missile_sprite.visible = true
+	glow.visible = true
 	# Catch the Moki if it is somehow already in the way the instant we launch.
 	for hit in get_overlapping_bodies():
 		if hit.is_in_group("player"):
