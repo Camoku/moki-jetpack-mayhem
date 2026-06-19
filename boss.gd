@@ -31,6 +31,8 @@ var kind: String = "cannon"
 @export var intro_time: float = 2.8    # "Boss incoming" beat: announcement, then it drops in.
 @export var arrive_delay: float = 1.8  # Stay off-screen this long (while the banner shows), THEN slide in.
 @export var attack_time: float = 2.5   # Length of each attack window.
+@export var frigate_volley_interval: float = 1.1  # Frigate fires a fresh missile volley this often DURING its attack.
+@export var frigate_volley_cutoff: float = 1.5    # ...but stops this many seconds before the attack ends, so the last missiles clear before the core opens.
 @export var overheat_time: float = 2.2 # Length of each vulnerable (core exposed) window.
 @export var hit_cooldown: float = 0.35 # Min gap between core hits (stops one pass scoring many).
 @export var offset_x: float = 0.0      # Screen-x offset from the camera centre (top-centre by default).
@@ -66,6 +68,8 @@ var _shake_t: float = 0.0    # transient body-shake timer (fire / hit / death)
 var _shake_mag: float = 0.0  # current shake magnitude in px
 var _fire_flash: float = 0.0 # brief flare of the boss's lights the moment it fires
 var _die_burst_cd: float = 0.0  # spacing between explosion bursts during the death sequence
+var _volley_cd: float = 0.0     # frigate: time until the next extra missile volley this attack
+var _smoke_cd: float = 0.0      # spacing between damage-spark pops once the boss is wounded
 var camera: Node2D
 
 @onready var body_sprite: Sprite2D = $Body
@@ -75,11 +79,30 @@ var camera: Node2D
 @onready var core: Area2D = $Core
 @onready var core_ring: Sprite2D = $Core/CoreRing
 
-# The Body sprite's resting position (the cannon boss hover-bobs around this).
-const BODY_X := 0.0
-const BODY_Y := 35.0
+# The Body sprite's resting position (the boss hover-bobs around this); filled in
+# per-kind from ART below.
+var _body_x: float = 0.0
+var _body_y: float = 35.0
 
-# Explosion spark-bursts reused for the cannon boss's death (world-space pops).
+# Per-kind boss art: which sprite to show, how to place/scale it, and where its
+# weak-point Core sits over it (measured from the art). Kinds NOT listed here keep
+# the placeholder Housing/Barrel rects. Adding a boss's art = one row here.
+const ART := {
+	"cannon": {
+		"tex": preload("res://sprites/bosses/lasercannon.png"),
+		"scale": Vector2(0.52, 0.34),
+		"pos": Vector2(0, 35),
+		"core": Vector2(4, 34),
+	},
+	"frigate": {
+		"tex": preload("res://sprites/bosses/missileboss.png"),
+		"scale": Vector2(0.45, 0.34),
+		"pos": Vector2(0, 52),
+		"core": Vector2(1, 64),
+	},
+}
+
+# Explosion spark-bursts reused for a boss's death (world-space pops).
 const FIREWORKS := preload("res://Fireworks.tscn")
 const DEATH_COLORS: Array[Color] = [Color(1, 0.6, 0.2), Color(1, 0.85, 0.3), Color(1, 0.35, 0.2), Color(0.6, 1.0, 0.5)]
 
@@ -100,7 +123,9 @@ func _configure_for_kind() -> void:
 	match kind:
 		"frigate":
 			boss_name = "MISSILE FRIGATE"
-			housing.color = Color(0.42, 0.34, 0.26, 1.0)   # rusty hull
+			_apply_art("frigate")   # real art (the placeholder rects are hidden)
+			attack_time = 3.8       # a longer dodge window (it ceasefires before the end)...
+			overheat_time = 2.8     # ...then a calmer, safer window to fly in and hit the core
 		"golem":
 			boss_name = "METEOR GOLEM"
 			housing.color = Color(0.36, 0.3, 0.26, 1.0)    # rocky brown
@@ -116,13 +141,26 @@ func _configure_for_kind() -> void:
 			housing.offset_bottom = 84.0
 		_:
 			boss_name = "LASER CANNON"
-			# The Laser Cannon uses real art: show the sprite, hide the placeholder rects.
-			body_sprite.visible = true
-			housing.visible = false
-			barrel.visible = false
+			_apply_art("cannon")
 
 	# Recurring bosses after the main fight are buffed: extra HP.
 	max_hp += int(round(overdrive * 2.0))
+
+
+# Show a kind's real sprite (Body) + its additive light overlay (Body/Glow), place
+# the weak-point Core over the art's glowing core, and hide the placeholder rects.
+func _apply_art(art_key: String) -> void:
+	var cfg: Dictionary = ART[art_key]
+	body_sprite.texture = cfg["tex"]
+	body_sprite.scale = cfg["scale"]
+	body_sprite.position = cfg["pos"]
+	body_sprite.visible = true
+	body_glow.texture = cfg["tex"]   # the breathing/flare overlay is the same art, drawn additively
+	core.position = cfg["core"]
+	_body_x = cfg["pos"].x
+	_body_y = cfg["pos"].y
+	housing.visible = false
+	barrel.visible = false
 
 
 func _process(delta: float) -> void:
@@ -152,9 +190,17 @@ func _process(delta: float) -> void:
 	match state:
 		State.INTRO:
 			if _t >= intro_time:
+				if camera != null:
+					camera.shake(10.0)   # arrival slam as it locks into place
 				_enter_attack()
 		State.ATTACK:
-			# The attack was fired on entry; just wait the window out, then overheat.
+			# The attack fired on entry. The frigate keeps lobbing fresh volleys
+			# through the whole window so the missiles come thick and fast.
+			if kind == "frigate" and _t < attack_time - frigate_volley_cutoff:
+				_volley_cd -= delta
+				if _volley_cd <= 0.0:
+					_volley_cd = frigate_volley_interval
+					_attack_missiles()
 			if _t >= attack_time:
 				_enter_overheat()
 		State.OVERHEAT:
@@ -188,7 +234,7 @@ func _process(delta: float) -> void:
 			_shake_t -= delta
 			ox += randf_range(-_shake_mag, _shake_mag)
 			oy += randf_range(-_shake_mag, _shake_mag)
-		body_sprite.position = Vector2(BODY_X + ox, BODY_Y + sin(_life * 2.0) * 4.0 + oy)
+		body_sprite.position = Vector2(_body_x + ox, _body_y + sin(_life * 2.0) * 4.0 + oy)
 
 		# Animate the boss's lights via the additive overlay: a gentle idle "breathing",
 		# a faster/brighter flare while it overheats, and a sharp flash when it fires.
@@ -211,26 +257,44 @@ func _process(delta: float) -> void:
 		else:
 			body_sprite.modulate = Color(1, 1, 1, 1)
 
+		# Wounded: once its HP is low, the boss spits sparks from random spots so
+		# you can see it's badly hurt as you close in for the kill.
+		if (state == State.ATTACK or state == State.OVERHEAT) and hp <= maxi(1, int(round(max_hp * 0.4))):
+			_smoke_cd -= delta
+			if _smoke_cd <= 0.0:
+				_smoke_cd = randf_range(0.35, 0.7)
+				var soff := Vector2(randf_range(-95.0, 95.0), randf_range(-30.0, 70.0))
+				_spawn_burst(soff, Color(1.0, 0.5, 0.25), false)
+
 
 # --- State transitions ------------------------------------------------------
 
 func _enter_attack() -> void:
 	state = State.ATTACK
 	_t = 0.0
+	_volley_cd = frigate_volley_interval   # next extra volley (frigate only)
 	_set_core_vulnerable(false)
 	_report_health()   # (re)show the HP bar now the fight is underway
 	_fire_pattern()
-	if body_sprite.visible:                # its lights flare and it shudders as it fires
-		_fire_flash = 0.2
-		_shake_body(4.0, 0.25)
-		if camera != null:
-			camera.shake(6.0)
 
 
 func _enter_overheat() -> void:
 	state = State.OVERHEAT
 	_t = 0.0
 	_set_core_vulnerable(true)
+	if camera != null:
+		camera.shake(3.5)   # the core bursts open - a little jolt says "now's your chance"
+
+
+# The boss reacts to firing: its lights flare and it shudders + shakes the screen.
+# Called on every volley (so the frigate's repeated volleys each punch).
+func _fire_juice() -> void:
+	if not body_sprite.visible:
+		return
+	_fire_flash = 0.2
+	_shake_body(3.5, 0.2)
+	if camera != null:
+		camera.shake(4.5)
 
 
 func _die() -> void:
@@ -366,6 +430,7 @@ func _attack_beams() -> void:
 		"sweep": _fire_sweep()
 		"lanes": _fire_lanes()
 		"cross": _fire_cross()
+	_fire_juice()
 
 
 # A full-height vertical beam that sweeps across from one side - flee to the
@@ -548,12 +613,17 @@ func _attack_missiles() -> void:
 		return
 	var rows: Array[float] = [110.0, 220.0, 330.0, 440.0, 550.0]
 	rows.shuffle()
-	# Fire at this many rows; the rest stay open as safe gaps.
+	# Fire at this many rows; the rest stay open as safe gaps. Missiles now come
+	# from BOTH the left and right edges (alternating) for more pressure.
 	var count: int = mini(2 + int(round(_power() * 2.0)), rows.size() - 1)
 	for i in count:
+		var from_left: bool = (i % 2 == 0)
 		var m := missile_scene.instantiate()
-		m.position = Vector2(camera.global_position.x + 600.0, rows[i])
+		var edge_x: float = -600.0 if from_left else 600.0
+		m.position = Vector2(camera.global_position.x + edge_x, rows[i])
+		m.from_left = from_left
 		get_parent().add_child(m)
+	_fire_juice()   # flare + shudder on every volley
 
 
 # --- Meteor attack (golem) --------------------------------------------------

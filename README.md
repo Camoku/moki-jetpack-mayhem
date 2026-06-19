@@ -161,7 +161,9 @@ change, switched by **`kind`** (the "one scene, a `kind` picks behaviour" patter
 Only a boss's **attack** is deadly — the housing is scenery and the core is *beneficial*
 (no cheap "touched it = dead"). Attacks all reuse existing hazards: **cannon** = sweep / lane /
 **cross** beams (the cross fires vertical **and** horizontal beams at once, leaving one safe
-pocket — power-scaled charge time); **frigate** = telegraphed missile volleys; **golem** = fast
+pocket — power-scaled charge time); **frigate** = telegraphed missile volleys from **both edges**
+(it lobs a fresh volley every ~1.1s through the attack, then ceasefires before the core opens so
+you get a safe window to hit it); **golem** = fast
 asteroid waves; **main (DREADNOUGHT)** round-robins the **Laser-Frenzy walls** (vertical /
 horizontal / combined safe-pocket) + missiles + meteors.
 
@@ -321,15 +323,19 @@ Real art lives in `res://sprites/`. We slice/play it with **`AnimatedSprite2D` +
   have white details to keep, so their backgrounds were removed by a **flood-fill from the image
   edges** instead.)
 
-The **laser-cannon boss** uses real art too: `sprites/bosses/lasercannon.png` on a `Body`
-sprite (the other boss kinds still use the `Housing` rect). Its lights **breathe** via an
-additive overlay (`Body/Glow`) that flares when it fires / overheats, and it **explodes** on
-death (spark bursts + strobe + screen shake). The full-screen **lasers are real too** — a red
-crackling beam (`lazer_beam_red*`, made by channel-swapping the green floating-beam art).
+**Bosses use real art** too, driven by a per-kind `ART` table in `boss.gd` (one row sets the
+sprite, scale, position, and weak-point Core location): the **laser cannon**
+(`sprites/bosses/lasercannon.png`) and the **missile frigate** (`sprites/bosses/missileboss.png`)
+so far; kinds not in the table keep the placeholder `Housing` rect. Each art boss's lights
+**breathe** via an additive overlay (`Body/Glow`) that flares when it fires / overheats, reacts
+to every shot (flare + shudder + screen shake), spits **damage sparks** once it's low on HP, and
+**explodes** on death (spark bursts + strobe + screen shake). The full-screen **lasers are real
+too** — a red crackling beam (`lazer_beam_red*`, made by channel-swapping the green floating-beam
+art). (The frigate sprite's wide back-wings were **feathered** to transparent at the sides so they
+fade out instead of ending on a hard cut.)
 
-Adding more art later follows the same recipe: drop PNGs in `res://sprites/`, set the filter,
-build a `SpriteFrames` (or just a `Sprite2D` for a single image), point a node at it. The other
-powerups, the HUD, and the other boss kinds' bodies are still placeholder rectangles.
+Adding a boss's art later = one row in the `ART` table. The other powerups, the HUD, and the
+golem / dreadnought boss bodies are still placeholder rectangles.
 
 ---
 
