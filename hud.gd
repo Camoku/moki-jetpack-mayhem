@@ -262,6 +262,11 @@ func add_spin_token() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# On the game-over screen, T returns to the title (to see the leaderboard).
+	if game_over and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_T:
+		get_tree().paused = false
+		get_tree().change_scene_to_file("res://TitleScreen.tscn")
+		return
 	if not event.is_action_pressed("boost"):
 		return
 	# The slot machine takes over the Space key while it is open.
@@ -425,10 +430,18 @@ func show_game_over() -> void:
 	if distance_m > GameState.best_distance:
 		GameState.best_distance = distance_m
 	GameState.coins += run_coins
+	GameState.add_score(GameState.player_name, final_score, distance_m)
 	GameState.save_game()
 
-	final_label.text = "Distance: %d m\nCoins: %d  (x%.1f)\nScore: %d\n\nBest Distance: %d m\nBest Score: %d\nBanked Coins: %d\n\nPress Space to retry" % [
-		distance_m, run_coins, mult, final_score, GameState.best_distance, GameState.high_score, GameState.coins
+	# Build a compact Top-5 board to show right here on the game-over screen.
+	var board := ""
+	var rank := 1
+	for e in GameState.leaderboard.slice(0, 5):
+		board += "\n%d. %s  —  %d" % [rank, str(e.get("name", "Player")), int(e.get("score", 0))]
+		rank += 1
+
+	final_label.text = "Distance: %d m   Score: %d  (x%.1f, +%d coins)\n\n— TOP SCORES —%s\n\nSPACE = retry      •      T = title" % [
+		distance_m, final_score, mult, run_coins, board
 	]
 	best_label.text = "Best: %d m" % GameState.best_distance
 	game_over_panel.visible = true
