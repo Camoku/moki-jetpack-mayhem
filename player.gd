@@ -57,6 +57,7 @@ extends CharacterBody2D
 @export var tiny_scale: float = 0.55        # Tiny Moki: shrink factor (smaller = slip through more).
 @export var tiny_time: float = 6.0          # Tiny Moki: how long you stay small.
 @export var second_chance_invuln: float = 1.6  # Second Chance: i-frames granted by a revive.
+@export var revive_invuln_time: float = 2.0    # Slot-machine REVIVE: i-frames after coming back.
 
 # A reference to the flame node so we can show/hide it. The $ is shorthand
 # for get_node(): $Flame finds the child named "Flame". @onready waits until
@@ -102,6 +103,13 @@ func _ready() -> void:
 	# Join the "player" group. Asteroids look us up by this group name
 	# so they know who to crash.
 	add_to_group("player")
+
+	# A slot-machine "SHIELD NEXT RUN!" win sets this flag on GameState (which
+	# survives the scene reload between runs). Consume it once, here, so this run
+	# starts with a free shield bubble already up.
+	if GameState.start_with_shield:
+		GameState.start_with_shield = false
+		gain_powerup("shield")
 
 
 # _physics_process() runs at a fixed, steady rate. It is the right
@@ -312,9 +320,22 @@ func crash() -> void:
 	set_physics_process(false)
 	flame.visible = false
 
-	# Hand off to the HUD, which shows the game-over screen, saves the
-	# high score, pauses the game, and waits for the retry key.
+	# Hand off to the HUD. It decides what happens next: if we collected any spin
+	# tokens this run, it opens the SLOT MACHINE (where a "revive" can bring us
+	# back); otherwise it goes straight to the game-over screen.
 	var hud := get_tree().get_first_node_in_group("hud")
 	if hud != null:
-		hud.show_game_over()
+		hud.player_crashed()
+
+
+# revive() is called by the HUD when a slot-machine spin lands on REVIVE. We come
+# back to life right where we crashed, with a window of invincibility so we can
+# fly clear of whatever got us. The run simply continues (nothing was finalised).
+func revive() -> void:
+	dead = false
+	set_physics_process(true)
+	velocity = Vector2.ZERO
+	invuln = maxf(invuln, revive_invuln_time)
+	# Make sure we're back inside the play area (not clipped into roof/floor).
+	position.y = clamp(position.y, ceiling_y, floor_y)
 

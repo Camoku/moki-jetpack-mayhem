@@ -55,7 +55,7 @@ real playtesting in places (noted per item).
 - [x] **HUD** — distance, multiplier, coins, best, status line, banners, game-over panel
 - [x] **Hazards** — asteroids (+drift), vertical laser, horizontal laser, beam gates, missiles,
       **bouncing orbs** (zig-zag), **crusher gates** (timing; clear lane while passing), **homing drones**
-- [x] **Pickups** — coins (bank + multiplier)
+- [x] **Pickups** — coins (bank + multiplier), **spin tokens** (rare; spent on the end-of-run slot machine)
 - [x] **Powerups (7)** — Shield, Ghost, Magnet, Doubler, **Dash** (invincible rocket burst),
       **Tiny Moki** (shrink to slip through), **Second Chance** (held revive, rare spawn via
       `powerup_weights`). Clean-sweep Highway/Coin Rush now also grant +coins + a free shield.
@@ -88,6 +88,14 @@ real playtesting in places (noted per item).
       (above) = ~10s of full-screen chaos; a hit *fails the event* (no reward) but doesn't end
       the run — survive → a chest. **SAFE** (below) = a sped-up scramble for scattered coins.
       The **DREADNOUGHT** drops a **GRAND chest** (double coins + Ghost + run-long mult).
+- [x] **Spin tokens + slot machine** — a rare violet **spin token** pickup
+      (`SpinToken.tscn`/`spin_token.gd`, scrolls like a coin, glows in Blackout) banks one
+      *spin* for the run (use-it-or-lose-it, never saved). On a crash *with* spins, the HUD
+      opens a **slot machine** (`hud.gd`) instead of game-over: each Space press spends a token
+      and rolls a weighted reel landing on **small / medium / mega coin win**, **shield next
+      run** (`GameState.start_with_shield`, consumed in `player._ready`), or **REVIVE** —
+      which resumes the very same run where you fell (`player.revive()`, i-frames). Out of
+      spins → on to the normal game-over screen. Coin wins bank immediately.
 
 ### 🔜 To build (roughly in priority order)
 - [ ] **Upgrade Store** *(next — the big one)*. End-of-run shop to spend banked coins on

@@ -22,7 +22,7 @@
 ;    the Moki between roof and floor so it never leaves the screen.
 ; ==========================================================
 
-[gd_scene load_steps=27 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="Script" path="res://player.gd" id="1_player"]
 [ext_resource type="Script" path="res://darkness.gd" id="15_darkness"]
@@ -32,6 +32,7 @@
 [ext_resource type="PackedScene" path="res://Drone.tscn" id="19_drone"]
 [ext_resource type="PackedScene" path="res://Fireworks.tscn" id="20_fireworks"]
 [ext_resource type="PackedScene" path="res://Chest.tscn" id="21_chest"]
+[ext_resource type="PackedScene" path="res://SpinToken.tscn" id="22_spintoken"]
 [ext_resource type="Script" path="res://background.gd" id="2_bg"]
 [ext_resource type="PackedScene" path="res://Obstacle.tscn" id="3_obstacle"]
 [ext_resource type="Script" path="res://spawner.gd" id="4_spawner"]
@@ -404,6 +405,7 @@ crusher_scene = ExtResource("18_crusher")
 drone_scene = ExtResource("19_drone")
 fireworks_scene = ExtResource("20_fireworks")
 chest_scene = ExtResource("21_chest")
+spin_token_scene = ExtResource("22_spintoken")
 
 ; ---------------- HUD (score + game over) ----------------
 ; A CanvasLayer draws in screen space (stays put as the world scrolls).
@@ -454,11 +456,21 @@ offset_bottom = 138.0
 theme_override_font_sizes/font_size = 20
 text = "Best: 0 m"
 
+; How many slot-machine spin tokens you've collected this run.
+[node name="SpinLabel" type="Label" parent="HUD"]
+offset_left = 24.0
+offset_top = 134.0
+offset_right = 360.0
+offset_bottom = 162.0
+theme_override_colors/font_color = Color(0.82, 0.62, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "Spins: 0"
+
 [node name="PowerupLabel" type="Label" parent="HUD"]
 offset_left = 24.0
-offset_top = 140.0
+offset_top = 166.0
 offset_right = 600.0
-offset_bottom = 168.0
+offset_bottom = 194.0
 theme_override_colors/font_color = Color(0.7, 0.95, 1, 1)
 theme_override_font_sizes/font_size = 20
 text = ""
@@ -550,4 +562,47 @@ horizontal_alignment = 1
 [node name="FinalLabel" type="Label" parent="HUD/GameOverPanel/Center/VBox"]
 theme_override_font_sizes/font_size = 26
 text = "Score: 0"
+horizontal_alignment = 1
+
+; The slot-machine overlay (hud.gd shows it on a crash when you have spin tokens).
+; Same layout as the game-over panel: a dim layer + centred reel/result/prompt.
+[node name="SlotPanel" type="Control" parent="HUD"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Dim" type="ColorRect" parent="HUD/SlotPanel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.04, 0.0, 0.08, 0.78)
+
+[node name="Center" type="CenterContainer" parent="HUD/SlotPanel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="VBox" type="VBoxContainer" parent="HUD/SlotPanel/Center"]
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="HUD/SlotPanel/Center/VBox"]
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 52
+text = "★  SLOT MACHINE  ★"
+horizontal_alignment = 1
+
+; The reel: one big symbol that flickers while spinning, then lands on a result.
+[node name="ReelLabel" type="Label" parent="HUD/SlotPanel/Center/VBox"]
+theme_override_font_sizes/font_size = 96
+text = "★"
+horizontal_alignment = 1
+
+[node name="SlotResultLabel" type="Label" parent="HUD/SlotPanel/Center/VBox"]
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 32
+text = ""
+horizontal_alignment = 1
+
+[node name="PromptLabel" type="Label" parent="HUD/SlotPanel/Center/VBox"]
+theme_override_colors/font_color = Color(0.8, 0.85, 0.95, 1)
+theme_override_font_sizes/font_size = 24
+text = "Press SPACE to spin"
 horizontal_alignment = 1

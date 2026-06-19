@@ -73,6 +73,7 @@ Main (Node2D)
 | `Powerup.tscn` / `powerup.gd` | One scene, `type` picks the effect: shield / magnet / doubler / ghost / dash / tiny / secondchance |
 | `BoostRing.tscn` / `ring.gd` | Fly through for a speed boost |
 | `Chest.tscn` / `chest.gd` | Reward chest — fly over it to bank coins + a powerup (every reward drops one) |
+| `SpinToken.tscn` / `spin_token.gd` | Rare violet token — banks one **slot-machine spin** for this run (use-it-or-lose-it) |
 
 ---
 
@@ -205,6 +206,37 @@ The **Choice Gate** *replaces* the post-boss reward (`boss_defeated()` → `_ent
 - **SAFE:** the world speeds up and scattered coins rush by — scramble to grab them, no danger.
 - The **DREADNOUGHT** flags `_choice_is_main`, so its survival chest is a **GRAND chest**
   (double coins + a Ghost + a score-multiplier bump) — bigger and gold/purple.
+
+### Spin tokens & the slot machine
+A **spin token** (`SpinToken.tscn` / `spin_token.gd`) is a rare violet pickup that drifts in
+on its own slow timer in the spawner (`spin_token_interval_min/max`, ~20–32s; available from
+the start). It scrolls and self-cleans like a coin, and reuses the **Blackout glow + fog-of-war**
+trick so it's visible in the dark. Grabbing one calls `hud.add_spin_token()`, which bumps
+`run_spins` (shown live on the `SpinLabel`). Spins are **use-it-or-lose-it**: per-run only,
+never saved to disk.
+
+When the Moki crashes, `player.crash()` hands off to **`hud.player_crashed()`** (instead of
+straight to game over). If `run_spins > 0`, it opens the **slot machine** (`SlotPanel`) and
+pauses the game — reusing the HUD's existing "process while paused" trick (the HUD is
+`process_mode = Always`, which is also how the game-over retry key works). Each **Space** press
+spends one token and rolls a flickering reel (animated in `hud._process`) for
+`slot_spin_duration` seconds, then lands on a **weighted-random** reward (`_pick_slot_reward()`,
+weights are `@export`):
+
+| Reward | What it does |
+|---|---|
+| Small / Medium / Mega coin win | Banks coins straight to `GameState.coins` (saved immediately) |
+| Shield next run | Sets `GameState.start_with_shield`; `player._ready()` consumes it into a free shield |
+| **Revive** | `player.revive()` — un-pauses and resumes *this* run where you fell, with i-frames |
+
+A revive does **not** clear `run_spins`, so leftover tokens stay usable if you crash again the
+same run. When the spins run out, the next Space press calls `_finish_slots()` → the normal
+`show_game_over()` (which banks `run_coins` and saves). With **no** tokens at all, a crash skips
+the slot entirely and goes straight to game over, exactly as before.
+
+The "shield next run" carry reuses the same **autoload-survives-reload** idea as
+`GameState.blackout`: a runtime-only flag (not in `save_game`/`load_game`) that outlives
+`reload_current_scene()` and is consumed once on the next `player._ready()`.
 
 ---
 

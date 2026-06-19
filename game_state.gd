@@ -21,6 +21,12 @@ var coins: int = 0       # banked currency, to spend in the store later
 # because it is a single value that lots of unrelated nodes need to read.
 var blackout: float = 0.0
 
+# Set true by a slot-machine win ("SHIELD NEXT RUN!") and consumed the next time
+# the Moki spawns (player._ready grants a shield, then clears it). Like blackout
+# it is RUNTIME-ONLY (never saved): it just needs to survive the scene reload
+# between runs, which an autoload does for free.
+var start_with_shield: bool = false
+
 # Where the save file lives. "user://" is a safe per-user folder Godot
 # manages for us (no need to worry about the real path on disk).
 const SAVE_PATH := "user://save.cfg"

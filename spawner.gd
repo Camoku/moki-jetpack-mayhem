@@ -61,6 +61,11 @@ extends Node2D
 @export var coin_min_y: float = 90.0      # Coin height range.
 @export var coin_max_y: float = 560.0
 
+# --- Spin tokens (rare: spent at the end of the run on the slot machine) ---
+@export var spin_token_scene: PackedScene
+@export var spin_token_interval_min: float = 20.0   # Random gap between tokens...
+@export var spin_token_interval_max: float = 32.0   # ...somewhere in this range (a rare treat).
+
 # --- Powerups (rare special pickups) ---
 @export var powerup_scene: PackedScene
 # The list of powerups that can appear. Add more here as we build them.
@@ -225,6 +230,7 @@ var _next_interval: float = 1.0
 var _time_since_laser: float = 999.0   # big start value = first laser allowed
 var _time_since_coins: float = 0.0
 var _time_to_powerup: float = 0.0
+var _time_to_spin_token: float = 0.0
 var _time_to_ring: float = 0.0
 var _time_to_missile: float = 0.0
 var _time_to_crusher: float = 0.0
@@ -293,6 +299,7 @@ func _ready() -> void:
 	_phase_time_left = randf_range(busy_min, busy_max)
 	_roll_next_interval()
 	_time_to_powerup = randf_range(powerup_interval_min, powerup_interval_max)
+	_time_to_spin_token = randf_range(spin_token_interval_min, spin_token_interval_max)
 	_time_to_ring = randf_range(ring_interval_min, ring_interval_max)
 	_time_to_missile = missile_interval_early
 	_time_to_crusher = randf_range(crusher_interval_min, crusher_interval_max)
@@ -331,6 +338,14 @@ func _process(delta: float) -> void:
 		if _time_to_powerup <= 0.0:
 			_time_to_powerup = randf_range(powerup_interval_min, powerup_interval_max)
 			_spawn_powerup()
+
+	# Spin tokens drift in on their own slow timer during normal play - a rare treat
+	# to spend on the slot machine when the run ends. Available from the very start.
+	if (_phase == Phase.BUSY or _phase == Phase.BREATHER) and spin_token_scene != null:
+		_time_to_spin_token -= delta
+		if _time_to_spin_token <= 0.0:
+			_time_to_spin_token = randf_range(spin_token_interval_min, spin_token_interval_max)
+			_spawn_spin_token()
 
 	# Count down the current phase; switch to the next one when it ends.
 	_phase_time_left -= delta
@@ -1224,7 +1239,7 @@ func _spawn_asteroid(difficulty: float) -> void:
 	var spawn_x := camera.global_position.x + spawn_ahead
 	var y := randf_range(min_y, max_y)
 	var tries := 0
-	while _overlaps(Vector2(spawn_x, y), RADIUS_ASTEROID, ["coin", "powerup", "ring"]) and tries < 8:
+	while _overlaps(Vector2(spawn_x, y), RADIUS_ASTEROID, ["coin", "powerup", "ring", "spintoken"]) and tries < 8:
 		y = randf_range(min_y, max_y)
 		tries += 1
 	asteroid.position = Vector2(spawn_x, y)
@@ -1246,7 +1261,7 @@ func _spawn_orb() -> void:
 	var spawn_x := camera.global_position.x + spawn_ahead
 	var y := randf_range(140.0, 520.0)
 	var tries := 0
-	while _overlaps(Vector2(spawn_x, y), 26.0, ["coin", "powerup", "ring"]) and tries < 8:
+	while _overlaps(Vector2(spawn_x, y), 26.0, ["coin", "powerup", "ring", "spintoken"]) and tries < 8:
 		y = randf_range(140.0, 520.0)
 		tries += 1
 	orb.position = Vector2(spawn_x, y)
@@ -1265,7 +1280,7 @@ func _spawn_drone() -> void:
 	var spawn_x := camera.global_position.x + spawn_ahead
 	var y := randf_range(140.0, 520.0)
 	var tries := 0
-	while _overlaps(Vector2(spawn_x, y), 26.0, ["coin", "powerup", "ring"]) and tries < 8:
+	while _overlaps(Vector2(spawn_x, y), 26.0, ["coin", "powerup", "ring", "spintoken"]) and tries < 8:
 		y = randf_range(140.0, 520.0)
 		tries += 1
 	drone.position = Vector2(spawn_x, y)
@@ -1295,7 +1310,7 @@ func _spawn_beam() -> void:
 	var spawn_x := camera.global_position.x + spawn_ahead
 	var y := randf_range(190.0, 470.0)
 	var tries := 0
-	while _overlaps(Vector2(spawn_x, y), my_r, ["coin", "powerup", "ring"]) and tries < 8:
+	while _overlaps(Vector2(spawn_x, y), my_r, ["coin", "powerup", "ring", "spintoken"]) and tries < 8:
 		y = randf_range(190.0, 470.0)
 		tries += 1
 	b.position = Vector2(spawn_x, y)
@@ -1330,11 +1345,27 @@ func _spawn_ring() -> void:
 	var spawn_x := camera.global_position.x + spawn_ahead
 	var y := randf_range(150.0, 510.0)
 	var tries := 0
-	while _overlaps(Vector2(spawn_x, y), RADIUS_RING, ["asteroid", "coin", "powerup"]) and tries < 8:
+	while _overlaps(Vector2(spawn_x, y), RADIUS_RING, ["asteroid", "coin", "powerup", "spintoken"]) and tries < 8:
 		y = randf_range(150.0, 510.0)
 		tries += 1
 	r.position = Vector2(spawn_x, y)
 	add_child(r)
+
+
+# A spin token at a height clear of hazards and other pickups, so it is never
+# buried. Like a ring, we re-roll its height to find a clear spot.
+func _spawn_spin_token() -> void:
+	if spin_token_scene == null:
+		return
+	var tk := spin_token_scene.instantiate()
+	var spawn_x := camera.global_position.x + spawn_ahead
+	var y := randf_range(coin_min_y, coin_max_y)
+	var tries := 0
+	while _overlaps(Vector2(spawn_x, y), RADIUS_POWERUP, ["asteroid", "coin", "powerup", "ring"]) and tries < 10:
+		y = randf_range(coin_min_y, coin_max_y)
+		tries += 1
+	tk.position = Vector2(spawn_x, y)
+	add_child(tk)
 
 
 func _spawn_laser() -> void:
@@ -1482,7 +1513,7 @@ func _spawn_coin_row() -> void:
 		var pos := Vector2(base_x + i * coin_spacing, y)
 		# Skip any coin that would sit on a hazard or another pickup - leaves a
 		# small gap in the row rather than an unfair, hidden coin.
-		if _overlaps(pos, RADIUS_COIN, ["asteroid", "powerup", "ring"]):
+		if _overlaps(pos, RADIUS_COIN, ["asteroid", "powerup", "ring", "spintoken"]):
 			continue
 		var coin := coin_scene.instantiate()
 		coin.position = pos
@@ -1495,10 +1526,10 @@ func _spawn_powerup() -> void:
 	var x := camera.global_position.x + spawn_ahead
 	var y := randf_range(coin_min_y, coin_max_y)
 	var tries := 0
-	while _overlaps(Vector2(x, y), RADIUS_POWERUP, ["asteroid", "coin", "ring"]) and tries < 10:
+	while _overlaps(Vector2(x, y), RADIUS_POWERUP, ["asteroid", "coin", "ring", "spintoken"]) and tries < 10:
 		y = randf_range(coin_min_y, coin_max_y)
 		tries += 1
-	if _overlaps(Vector2(x, y), RADIUS_POWERUP, ["asteroid", "coin", "ring"]):
+	if _overlaps(Vector2(x, y), RADIUS_POWERUP, ["asteroid", "coin", "ring", "spintoken"]):
 		return   # no clear spot this time - skip rather than overlap
 
 	var p := powerup_scene.instantiate()

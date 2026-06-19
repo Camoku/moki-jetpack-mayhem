@@ -1,0 +1,76 @@
+; ==========================================================
+;  SpinToken.tscn - one collectible slot-machine spin token
+; ==========================================================
+;  Same shape as a Coin (an Area2D that detects the Moki), but violet with a
+;  star, and instead of a coin it grants one SPIN for the end-of-run slot
+;  machine. Runs spin_token.gd.
+;
+;  Tree:
+;    SpinToken (Area2D)    <- detector, runs spin_token.gd
+;    +-- CollisionShape2D  <- the pickup area
+;    +-- Outer (ColorRect) <- violet square
+;    +-- Inner (ColorRect) <- lighter violet centre
+;    +-- Label             <- a white star
+;    +-- Glow (PointLight2D)<- its shine in the dark (Blackout event)
+; ==========================================================
+
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://spin_token.gd" id="1_spin"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_spin"]
+size = Vector2(36, 36)
+
+; A soft round glow: white in the middle fading to transparent at the edge.
+; This is the LIGHT TEXTURE the token's glow shines through in the dark.
+[sub_resource type="Gradient" id="Gradient_glow"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GlowTex_spin"]
+gradient = SubResource("Gradient_glow")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+[node name="SpinToken" type="Area2D"]
+script = ExtResource("1_spin")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_spin")
+
+[node name="Outer" type="ColorRect" parent="."]
+offset_left = -19.0
+offset_top = -19.0
+offset_right = 19.0
+offset_bottom = 19.0
+color = Color(0.7, 0.3, 1, 1)
+
+[node name="Inner" type="ColorRect" parent="."]
+offset_left = -12.0
+offset_top = -12.0
+offset_right = 12.0
+offset_bottom = 12.0
+color = Color(0.88, 0.7, 1, 1)
+
+; A white star badge so the token reads as "special / lucky" at a glance.
+[node name="Label" type="Label" parent="."]
+offset_left = -19.0
+offset_top = -21.0
+offset_right = 19.0
+offset_bottom = 19.0
+theme_override_colors/font_color = Color(0.35, 0.1, 0.55, 1)
+theme_override_font_sizes/font_size = 26
+text = "★"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+; The token's violet shine. energy starts at 0 (invisible in normal play);
+; spin_token.gd cranks it up with GameState.blackout so it only glows in the dark.
+[node name="Glow" type="PointLight2D" parent="."]
+energy = 0.0
+color = Color(0.8, 0.45, 1, 1)
+texture = SubResource("GlowTex_spin")
+texture_scale = 0.7
