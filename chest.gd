@@ -19,18 +19,23 @@ extends Area2D
 @export var cleanup_behind: float = 760.0
 
 var camera: Node2D
+var _t: float = 0.0   # drives the bob + glow pulse
 
-@onready var lid: ColorRect = $Lid
-@onready var body_rect: ColorRect = $Body
+@onready var sprite: AnimatedSprite2D = $Sprite
+@onready var glow: PointLight2D = $Glow
 
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	add_to_group("chest")
 	if big:
-		scale = Vector2(1.5, 1.5)               # a grander prize
-		lid.color = Color(1.0, 0.95, 0.5, 1.0)  # bright gold
-		body_rect.color = Color(0.55, 0.2, 0.5, 1.0)  # royal purple
+		# The GRAND (boss) chest: fancier gold art, a richer glow, and bigger -
+		# scaling the whole node grows its grab area too.
+		sprite.sprite_frames = load("res://sprites/chests/chest_grand_frames.tres")
+		sprite.play("idle")
+		glow.color = Color(1.0, 0.8, 0.25, 1.0)
+		glow.texture_scale = 0.8
+		scale = Vector2(1.5, 1.5)
 
 
 func _on_body_entered(body: Node) -> void:
@@ -52,7 +57,12 @@ func _on_body_entered(body: Node) -> void:
 	queue_free()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	# Gently bob + pulse the glow so the reward chest reads as a live, enticing pickup.
+	_t += delta
+	sprite.position.y = sin(_t * 2.5) * 4.0
+	glow.energy = (1.5 if big else 1.0) + 0.45 * (0.5 + 0.5 * sin(_t * 2.0))
+
 	if camera == null:
 		camera = get_tree().get_first_node_in_group("camera")
 	if camera != null and global_position.x < camera.global_position.x - cleanup_behind:

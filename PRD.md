@@ -112,8 +112,9 @@ playtesting in places (noted per item).
       shake + crash particle burst + jetpack trail, and a **combo/streak** meter
 - [ ] **Audio** — jetpack whoosh, coin ding, crash boom, event stingers, music
 - [~] **Real art** — *in progress.* Floating **laser beams** (metal caps + an animated
-      crackling beam, varied sizes) and **missiles** (animated flickering exhaust + a pulsing red
-      danger glow) now use real art too. Done: the **Moki** (24-frame `AnimatedSprite2D`,
+      crackling beam, varied sizes) **missiles** (animated flickering exhaust + a pulsing red
+      danger glow), and **reward chests** (animated open/close + gold glow; normal + grand) now use
+      real art too. Done: the **Moki** (24-frame `AnimatedSprite2D`,
       idle/run/boost + velocity tilt), a **particle jetpack flame** (`jet_flame.gd`),
       **spinning coins** (6-frame 32×32 sheet, desynced), **asteroids** (rock sprite +
       random tumble; also Storm meteors / Golem boss), and a **parallax city background +

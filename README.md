@@ -73,7 +73,7 @@ Main (Node2D)
 | `Coin.tscn` / `coin.gd` | Coin — animated spinning gold coin; banks currency + builds the end-of-run multiplier |
 | `Powerup.tscn` / `powerup.gd` | One scene, `type` picks the effect: shield / magnet / doubler / ghost / dash / tiny / secondchance |
 | `BoostRing.tscn` / `ring.gd` | Fly through for a speed boost |
-| `Chest.tscn` / `chest.gd` | Reward chest — fly over it to bank coins + a powerup (every reward drops one) |
+| `Chest.tscn` / `chest.gd` | Reward chest — animated (opens/closes) + gold glow + bob; fly over it to bank coins + a powerup. `big` flag swaps to the fancier GRAND (boss) chest |
 | `SpinToken.tscn` / `spin_token.gd` | Rare violet token — banks one **slot-machine spin** for this run (use-it-or-lose-it) |
 
 ---
