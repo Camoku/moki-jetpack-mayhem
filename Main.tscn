@@ -26,6 +26,7 @@
 [ext_resource type="Script" uid="uid://c7wmykfldtt8y" path="res://jet_flame.gd" id="24_jetflame"]
 [ext_resource type="Texture2D" uid="uid://d1i22gelo3umh" path="res://sprites/backgrounds/city_bg.png" id="25_citybg"]
 [ext_resource type="Texture2D" uid="uid://d0lv6hf1cn8rk" path="res://sprites/backgrounds/city_floor.png" id="26_cityfloor"]
+[ext_resource type="Texture2D" uid="uid://dgcakt3hkqeon" path="res://sprites/shieldaura.png" id="27_shieldaura"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_box"]
 size = Vector2(64, 64)
@@ -302,13 +303,14 @@ position = Vector2(2, 14)
 scale = Vector2(0.833, 0.833)
 script = ExtResource("24_jetflame")
 
-[node name="Shield" type="ColorRect" parent="Player" unique_id=1388488839]
+; The shield bubble: the Moki sits INSIDE this translucent green energy sphere
+; while a Shield is active. Drawn over the Moki (semi-transparent interior so he
+; shows through, bright rim + sparkles). player.gd toggles it on/off.
+[node name="Shield" type="Sprite2D" parent="Player" unique_id=1388488839]
 visible = false
-offset_left = -46.0
-offset_top = -46.0
-offset_right = 46.0
-offset_bottom = 46.0
-color = Color(0.3, 0.7, 1, 0.3)
+texture_filter = 1
+scale = Vector2(0.14, 0.14)
+texture = ExtResource("27_shieldaura")
 
 [node name="Glow" type="PointLight2D" parent="Player" unique_id=1474109514]
 color = Color(1, 0.6, 0.25, 1)

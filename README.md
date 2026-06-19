@@ -86,7 +86,8 @@ Main (Node2D)
 
 ## Powerups
 One `Powerup.tscn`; `type` picks the look (`powerup.gd`) + effect (`player.gain_powerup()`).
-- **Shield** — absorbs one hit (one-shot). | **Ghost** — fly through everything (rainbow
+- **Shield** — absorbs one hit (one-shot); the Moki sits inside a translucent green
+  energy **bubble** (`sprites/shieldaura.png`) that breathes + swirls while active. | **Ghost** — fly through everything (rainbow
   pulse) + i-frames after. | **Magnet** — pulls coins in. | **Doubler** — coins count double.
 - **Dash** (`>>`) — an **invincible rocket burst**: i-frames + a strong camera boost (~2s),
   blast straight through hazards (reuses the boost gear, so no screen-edge clamp).

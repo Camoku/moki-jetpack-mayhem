@@ -70,7 +70,7 @@ extends CharacterBody2D
 @onready var flame: CPUParticles2D = $Moki/Flame
 
 # The shield "bubble" visual, shown only while a shield is active.
-@onready var shield_visual: ColorRect = $Shield
+@onready var shield_visual: Sprite2D = $Shield
 
 # A faint self-glow so the Moki is just visible during a Blackout event.
 # Kept dim on purpose (full dark is the whole point). GLOW_MAX = brightness
@@ -89,6 +89,10 @@ var dead: bool = false
 # Shield powerup state.
 var has_shield: bool = false
 var invuln: float = 0.0   # seconds of post-shield invincibility remaining
+# The shield bubble's resting scale (set in the scene) + a timer that drives its
+# gentle breathing pulse + slow swirl while it's up.
+const SHIELD_SCALE := 0.14
+var _shield_t: float = 0.0
 
 # A held Second Chance revive token.
 var _has_second_chance: bool = false
@@ -265,6 +269,15 @@ func powerup_status() -> String:
 func _update_powerups(delta: float) -> void:
 	if invuln > 0.0:
 		invuln -= delta
+
+	# Live shield bubble: a gentle breathing pulse + a slow swirl so the sparkles
+	# orbit, instead of a dead static sphere.
+	if has_shield:
+		_shield_t += delta
+		# Pulse only GROWS from the base (never shrinks below it), so the bubble
+		# always covers the Moki even at the low point of the breath.
+		shield_visual.scale = Vector2.ONE * SHIELD_SCALE * (1.0 + 0.04 * (0.5 + 0.5 * sin(_shield_t * 3.0)))
+		shield_visual.rotation += delta * 0.5
 
 	# Tiny Moki: smoothly shrink the whole Moki (collision + visuals) while active,
 	# and grow back when it ends.
