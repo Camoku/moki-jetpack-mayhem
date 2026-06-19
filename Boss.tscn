@@ -2,31 +2,54 @@
 ;  Boss.tscn - one scene for every boss (boss.gd's `kind` picks which)
 ; ==========================================================
 ;  A ceiling-mounted turret that hangs at the top of the screen and rides
-;  along with the camera (screen-locked, like the lasers). boss.gd tints the
-;  housing and drives the whole fight from its `kind`:
-;     INTRO -> (ATTACK <-> OVERHEAT) -> DYING / RETREAT
+;  along with the camera (screen-locked, like the lasers). boss.gd drives the
+;  whole fight from its `kind`:  INTRO -> (ATTACK <-> OVERHEAT) -> DYING / RETREAT
 ;
 ;  Tree:
 ;    Boss (Node2D)               <- the boss brain (boss.gd)
-;    +-- Housing (ColorRect)     <- the turret body (recoloured per kind; NOT deadly)
-;    +-- Barrel  (ColorRect)     <- a stub pointing down (decorative)
+;    +-- Body (Sprite2D)         <- the LASER CANNON art (shown only for "cannon")
+;    +-- Housing (ColorRect)     <- the turret body for the other kinds (recoloured)
+;    +-- Barrel  (ColorRect)     <- a stub pointing down (decorative, other kinds)
 ;    +-- Core (Area2D)           <- the WEAK POINT you fly into to damage it
 ;         +-- CoreShape          <- its touch area
-;         +-- CoreRect           <- the glowing square (red=sealed, hot=exposed)
+;         +-- CoreGlow           <- a glow boss.gd tints red(sealed)/hot(exposed)/white(hit)
 ;
 ;  Only a boss's ATTACK (beams / missiles / meteors) is deadly; the housing is
 ;  scenery and the core is beneficial - so there is no cheap "touched it = dead".
 ; ==========================================================
 
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://boss.gd" id="1_boss"]
+[ext_resource type="Texture2D" uid="uid://dliww5hf41mye" path="res://sprites/bosses/lasercannon.png" id="2_lcb"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_core"]
 size = Vector2(72, 72)
 
+[sub_resource type="Gradient" id="Gradient_glow"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GlowTex_core"]
+gradient = SubResource("Gradient_glow")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
 [node name="Boss" type="Node2D"]
 script = ExtResource("1_boss")
+
+; The laser-cannon boss art (shown only for the "cannon" kind; boss.gd hides the
+; Housing/Barrel rects and shows this). Positioned so its green core sits over the
+; Core weak-point node below.
+[node name="Body" type="Sprite2D" parent="."]
+visible = false
+texture_filter = 1
+position = Vector2(-6, 41)
+scale = Vector2(0.34, 0.34)
+texture = ExtResource("2_lcb")
 
 [node name="Housing" type="ColorRect" parent="."]
 offset_left = -120.0
@@ -42,16 +65,16 @@ offset_right = 26.0
 offset_bottom = 108.0
 color = Color(0.22, 0.23, 0.3, 1)
 
-; The weak point, hanging below the barrel in reachable play space.
+; The weak point, hanging below the turret in reachable play space.
 [node name="Core" type="Area2D" parent="."]
-position = Vector2(0, 152)
+position = Vector2(0, 23)
 
 [node name="CoreShape" type="CollisionShape2D" parent="Core"]
 shape = SubResource("RectangleShape2D_core")
 
-[node name="CoreRect" type="ColorRect" parent="Core"]
-offset_left = -36.0
-offset_top = -36.0
-offset_right = 36.0
-offset_bottom = 36.0
-color = Color(0.5, 0.15, 0.15, 1)
+; The weak-point glow: a soft radial that boss.gd tints red (sealed) / hot
+; (exposed, pulsing) / white (hit). Replaces the old flat square.
+[node name="CoreGlow" type="Sprite2D" parent="Core"]
+texture_filter = 1
+scale = Vector2(0.55, 0.55)
+texture = SubResource("GlowTex_core")

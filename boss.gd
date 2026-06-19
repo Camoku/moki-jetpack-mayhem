@@ -64,11 +64,18 @@ var _last_pattern: String = ""
 var _last_formation: String = ""  # previous frenzy formation, so the main boss doesn't repeat it
 var _main_attack_index: int = 0   # round-robins the main boss through its three attacks
 var _core_vulnerable: bool = false
+var _flash_t: float = 0.0    # brief white flash on the cannon body when the core is hit
 var camera: Node2D
 
+@onready var body_sprite: Sprite2D = $Body
 @onready var housing: ColorRect = $Housing
+@onready var barrel: ColorRect = $Barrel
 @onready var core: Area2D = $Core
-@onready var core_rect: ColorRect = $Core/CoreRect
+@onready var core_glow: Sprite2D = $Core/CoreGlow
+
+# The Body sprite's resting position (the cannon boss hover-bobs around this).
+const BODY_X := -6.0
+const BODY_Y := 41.0
 
 
 func _ready() -> void:
@@ -103,7 +110,10 @@ func _configure_for_kind() -> void:
 			housing.offset_bottom = 84.0
 		_:
 			boss_name = "LASER CANNON"
-			housing.color = Color(0.3, 0.32, 0.4, 1.0)     # steel blue
+			# The Laser Cannon uses real art: show the sprite, hide the placeholder rects.
+			body_sprite.visible = true
+			housing.visible = false
+			barrel.visible = false
 
 	# Recurring bosses after the main fight are buffed: extra HP.
 	max_hp += int(round(overdrive * 2.0))
@@ -151,6 +161,17 @@ func _process(delta: float) -> void:
 	if (state == State.ATTACK or state == State.OVERHEAT) and _life >= max_time:
 		_fail()
 
+	# Cannon boss juice: a gentle hover bob, plus a quick white flash when its core
+	# takes a hit. (The other kinds use the static Housing rect.)
+	if body_sprite.visible:
+		body_sprite.position = Vector2(BODY_X, BODY_Y + sin(_life * 2.0) * 4.0)
+		if state != State.DYING:
+			if _flash_t > 0.0:
+				_flash_t -= delta
+				body_sprite.modulate = Color(1, 1, 1, 1).lerp(Color(2.2, 2.2, 2.2, 1), clampf(_flash_t / 0.15, 0.0, 1.0))
+			else:
+				body_sprite.modulate = Color(1, 1, 1, 1)
+
 
 # --- State transitions ------------------------------------------------------
 
@@ -172,7 +193,8 @@ func _die() -> void:
 	state = State.DYING
 	_t = 0.0
 	_set_core_vulnerable(false)
-	housing.color = Color(1.0, 0.85, 0.4, 1.0)   # flash bright as it blows
+	housing.color = Color(1.0, 0.85, 0.4, 1.0)   # flash bright as it blows (other kinds)
+	body_sprite.modulate = Color(2.2, 2.2, 2.2, 1.0)    # the cannon sprite flares bright
 	var sp := get_tree().get_first_node_in_group("spawner")
 	if sp != null and sp.has_method("boss_defeated"):
 		sp.boss_defeated(kind)
@@ -191,14 +213,14 @@ func _fail() -> void:
 
 func _set_core_vulnerable(v: bool) -> void:
 	_core_vulnerable = v
-	core_rect.color = COLOR_CORE_HOT if v else COLOR_CORE_COLD
-	core_rect.modulate.a = 1.0
+	core_glow.modulate = COLOR_CORE_HOT if v else COLOR_CORE_COLD
+	core_glow.modulate.a = 1.0
 
 
 # Make the exposed core pulse so it clearly reads as "hit me now".
 func _pulse_core(delta: float) -> void:
 	_pulse += delta * 8.0
-	core_rect.modulate.a = 0.65 + 0.35 * sin(_pulse)
+	core_glow.modulate.a = 0.55 + 0.45 * sin(_pulse)
 
 
 func _on_core_entered(body: Node) -> void:
@@ -210,7 +232,8 @@ func _on_core_entered(body: Node) -> void:
 func _take_hit() -> void:
 	hp -= 1
 	_hit_cd = hit_cooldown
-	core_rect.color = Color(1, 1, 1, 1)   # white flash; the pulse restores the hot colour
+	core_glow.modulate = Color(1, 1, 1, 1)   # white flash; the pulse restores the hot colour
+	_flash_t = 0.15                          # flash the cannon body too
 	_report_health()
 	if hp <= 0:
 		_die()
