@@ -39,12 +39,13 @@ script = ExtResource("1_coin")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_coin")
 
-; The spinning gold coin (replaces the old flat gold squares). The art is ~150px,
-; so scale ~0.25 brings it down to ~38px (about the old coin size). Smooth art, so
-; we leave the default Linear filter (no Nearest). coin.gd randomises the start
-; frame so a field of coins doesn't spin in lock-step.
+; The spinning gold coin (replaces the old flat gold squares). Pixel art at 32x32,
+; so Nearest filter; scale ~1.4 brings the ~23px coin up to ~32px (just under the
+; 34px hitbox, so it's easy to grab). coin.gd randomises the start frame so a field
+; of coins doesn't spin in lock-step.
 [node name="Sprite" type="AnimatedSprite2D" parent="."]
-scale = Vector2(0.25, 0.25)
+texture_filter = 1
+scale = Vector2(1.7, 1.7)
 sprite_frames = ExtResource("2_coinframes")
 animation = &"spin"
 autoplay = "spin"

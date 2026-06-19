@@ -56,7 +56,7 @@ Main (Node2D)
 ### Hazards
 | Scene / Script | Hazard |
 |---|---|
-| `Obstacle.tscn` / `obstacle.gd` | Asteroid (can drift; storm meteors use `extra_speed`) |
+| `Obstacle.tscn` / `obstacle.gd` | Asteroid — animated rock sprite (random tumble); can drift; storm meteors use `extra_speed` |
 | `VerticalLaser.tscn` / `vertical_laser.gd` | Solid full-height laser, screen-locked, charge→fire |
 | `HorizontalLaser.tscn` / `horizontal_laser.gd` | Solid full-width laser, charge→fire |
 | `BeamObstacle.tscn` / `beam_obstacle.gd` | Floating capped laser bar (H or V) |
@@ -269,22 +269,29 @@ The "shield next run" carry reuses the same **autoload-survives-reload** idea as
 Real art lives in `res://sprites/`. We slice/play it with **`AnimatedSprite2D` + `SpriteFrames`**
 (the beginner-friendly way to do frame animation — no `AnimationPlayer` needed):
 - **The Moki** — `sprites/moki_0653_sprite_sheet.png` is one row of 24 frames (128×97).
-  `sprites/moki_frames.tres` slices it into two looping animations: **`idle`** (frames 0–15,
-  calm bob) and **`boost`** (frames 16–23, arms spread). The Player's `Moki` node plays them;
-  `player.gd` switches idle↔boost and **tilts the sprite** (`max_tilt`/`tilt_ref_speed`/
-  `tilt_smooth`) nose-up while rising, nose-down while falling. We tilt the *sprite*, not the
-  Player, so the collision box stays square. `texture_filter = Nearest` keeps the pixel art crisp.
+  `sprites/moki_frames.tres` slices it into three looping animations: **`idle`** (0–15, standing),
+  **`boost`** and **`run`** (both the 16–23 arms-out/striding cycle). `player.gd`'s
+  `_update_moki_look()` picks: **boost** while the jetpack fires, **run** when resting on the
+  floor (carried along), else **idle** gliding. It also **tilts the sprite** (`max_tilt`/
+  `tilt_ref_speed`/`tilt_smooth`) nose-up rising / nose-down falling (flat when grounded). We
+  tilt the *sprite*, not the Player, so the collision box stays square. `texture_filter = Nearest`
+  keeps the pixel art crisp. (Scaled ~1.2× for presence; the flame child is counter-scaled so its
+  tuning is unaffected.)
 - **The jetpack flame** — `jet_flame.gd` on a `CPUParticles2D` under the Moki: soft round sparks
   streaming downward, tilting with the body, drawn *behind* it. `player.gd` toggles `emitting`
   with the boost button.
-- **Coins** — `sprites/coins/coin1..6.png` are 6 spin frames; `sprites/coins/coin_frames.tres`
-  is the looping `spin`. `Coin.tscn`'s `Sprite` plays it (smooth art, so default Linear filter,
-  scaled ~0.25 to coin size); `coin.gd` randomises each coin's start frame + speed so a row
-  doesn't spin in lock-step.
+- **Coins** — `sprites/coins/coin_rot_anim.png` is a 6-frame 32×32 spin sheet;
+  `sprites/coins/coin_frames.tres` slices it into the looping `spin`. `Coin.tscn`'s `Sprite`
+  plays it (pixel art → Nearest filter, scaled ~1.7× to coin size); `coin.gd` randomises each
+  coin's start frame + speed so a row doesn't spin in lock-step.
+- **Asteroids** — `sprites/asteroid_brown.png` (single 160×160 pixel-art rock). `Obstacle.tscn`'s
+  `Sprite` shows it (Nearest, ~0.52×); `obstacle.gd` gives each copy a random angle, flip, and slow
+  tumble (rotating the *sprite* only, so the square hitbox is unchanged). Also covers Storm meteors
+  and the Meteor Golem boss (same scene).
 
 Adding more art later follows the same recipe: drop PNGs in `res://sprites/`, set the filter,
-build a `SpriteFrames`, point an `AnimatedSprite2D` at it. Everything else (asteroids, beams,
-powerups, the HUD, bosses) is still placeholder rectangles.
+build a `SpriteFrames` (or just a `Sprite2D` for a single image), point a node at it. Beams,
+lasers, powerups, the HUD, and bosses are still placeholder rectangles.
 
 ---
 

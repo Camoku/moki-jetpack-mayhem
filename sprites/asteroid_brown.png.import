@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d17qjvekwd0yy"
-path="res://.godot/imported/coin5.png-34ab5409578e40cd2c62b01ea5445e7a.ctex"
+uid="uid://bu15dbksma0l1"
+path="res://.godot/imported/asteroid_brown.png-e4a2c997f9e97ec52329a886f3c13ebc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/coins/coin5.png"
-dest_files=["res://.godot/imported/coin5.png-34ab5409578e40cd2c62b01ea5445e7a.ctex"]
+source_file="res://sprites/asteroid_brown.png"
+dest_files=["res://.godot/imported/asteroid_brown.png-e4a2c997f9e97ec52329a886f3c13ebc.ctex"]
 
 [params]
 

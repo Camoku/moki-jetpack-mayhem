@@ -1,10 +1,38 @@
-; SpriteFrames for the Moki, sliced from moki_0653_sprite_sheet.png.
-; The sheet is one row of 24 frames, each 128x97. We split it into two animations:
-;   - "idle"  = frames 0..15 (calm standing / gentle bob)
-;   - "boost" = frames 16..23 (arms spread, energetic flying pose)
-[gd_resource type="SpriteFrames" load_steps=26 format=3 uid="uid://b8mokiframes001"]
+[gd_resource type="SpriteFrames" format=3 uid="uid://cm2a7c4h13vfc"]
 
 [ext_resource type="Texture2D" uid="uid://cx68a20n7eatt" path="res://sprites/moki_0653_sprite_sheet.png" id="1_sheet"]
+
+[sub_resource type="AtlasTexture" id="f16"]
+atlas = ExtResource("1_sheet")
+region = Rect2(2048, 0, 128, 97)
+
+[sub_resource type="AtlasTexture" id="f17"]
+atlas = ExtResource("1_sheet")
+region = Rect2(2176, 0, 128, 97)
+
+[sub_resource type="AtlasTexture" id="f18"]
+atlas = ExtResource("1_sheet")
+region = Rect2(2304, 0, 128, 97)
+
+[sub_resource type="AtlasTexture" id="f19"]
+atlas = ExtResource("1_sheet")
+region = Rect2(2432, 0, 128, 97)
+
+[sub_resource type="AtlasTexture" id="f20"]
+atlas = ExtResource("1_sheet")
+region = Rect2(2560, 0, 128, 97)
+
+[sub_resource type="AtlasTexture" id="f21"]
+atlas = ExtResource("1_sheet")
+region = Rect2(2688, 0, 128, 97)
+
+[sub_resource type="AtlasTexture" id="f22"]
+atlas = ExtResource("1_sheet")
+region = Rect2(2816, 0, 128, 97)
+
+[sub_resource type="AtlasTexture" id="f23"]
+atlas = ExtResource("1_sheet")
+region = Rect2(2944, 0, 128, 97)
 
 [sub_resource type="AtlasTexture" id="f0"]
 atlas = ExtResource("1_sheet")
@@ -70,40 +98,37 @@ region = Rect2(1792, 0, 128, 97)
 atlas = ExtResource("1_sheet")
 region = Rect2(1920, 0, 128, 97)
 
-[sub_resource type="AtlasTexture" id="f16"]
-atlas = ExtResource("1_sheet")
-region = Rect2(2048, 0, 128, 97)
-
-[sub_resource type="AtlasTexture" id="f17"]
-atlas = ExtResource("1_sheet")
-region = Rect2(2176, 0, 128, 97)
-
-[sub_resource type="AtlasTexture" id="f18"]
-atlas = ExtResource("1_sheet")
-region = Rect2(2304, 0, 128, 97)
-
-[sub_resource type="AtlasTexture" id="f19"]
-atlas = ExtResource("1_sheet")
-region = Rect2(2432, 0, 128, 97)
-
-[sub_resource type="AtlasTexture" id="f20"]
-atlas = ExtResource("1_sheet")
-region = Rect2(2560, 0, 128, 97)
-
-[sub_resource type="AtlasTexture" id="f21"]
-atlas = ExtResource("1_sheet")
-region = Rect2(2688, 0, 128, 97)
-
-[sub_resource type="AtlasTexture" id="f22"]
-atlas = ExtResource("1_sheet")
-region = Rect2(2816, 0, 128, 97)
-
-[sub_resource type="AtlasTexture" id="f23"]
-atlas = ExtResource("1_sheet")
-region = Rect2(2944, 0, 128, 97)
-
 [resource]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("f16")
+}, {
+"duration": 1.0,
+"texture": SubResource("f17")
+}, {
+"duration": 1.0,
+"texture": SubResource("f18")
+}, {
+"duration": 1.0,
+"texture": SubResource("f19")
+}, {
+"duration": 1.0,
+"texture": SubResource("f20")
+}, {
+"duration": 1.0,
+"texture": SubResource("f21")
+}, {
+"duration": 1.0,
+"texture": SubResource("f22")
+}, {
+"duration": 1.0,
+"texture": SubResource("f23")
+}],
+"loop": true,
+"name": &"boost",
+"speed": 14.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("f0")
@@ -183,6 +208,6 @@ animations = [{
 "texture": SubResource("f23")
 }],
 "loop": true,
-"name": &"boost",
-"speed": 14.0
+"name": &"run",
+"speed": 15.0
 }]

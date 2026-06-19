@@ -10,9 +10,10 @@
 ;    +-- Crater (ColorRect)   <- a little darker detail for charm
 ; ==========================================================
 
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://obstacle.gd" id="1_obs"]
+[ext_resource type="Texture2D" uid="uid://bu15dbksma0l1" path="res://sprites/asteroid_brown.png" id="2_ast"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_rock"]
 size = Vector2(56, 56)
@@ -37,21 +38,14 @@ script = ExtResource("1_obs")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_rock")
 
-; ColorRects are positioned from their top-left, so we offset by half the
-; size (-28..28) to centre the asteroid on the Area2D's origin.
-[node name="Rock" type="ColorRect" parent="."]
-offset_left = -28.0
-offset_top = -28.0
-offset_right = 28.0
-offset_bottom = 28.0
-color = Color(0.5, 0.42, 0.36, 1)
-
-[node name="Crater" type="ColorRect" parent="."]
-offset_left = -8.0
-offset_top = -14.0
-offset_right = 6.0
-offset_bottom = 0.0
-color = Color(0.38, 0.31, 0.27, 1)
+; The asteroid art (replaces the old grey rectangles). Pixel art, so Nearest
+; filter; scaled ~0.42 so the ~150px rock sits a touch larger than the 56px
+; hitbox (fair - the visual covers the collision). obstacle.gd gives each copy a
+; random orientation, flip, and slow tumble so they don't all look identical.
+[node name="Sprite" type="Sprite2D" parent="."]
+texture_filter = 1
+texture = ExtResource("2_ast")
+scale = Vector2(0.52, 0.52)
 
 ; The asteroid's danger glow - a menacing red-orange. Off (energy 0) in
 ; normal play; obstacle.gd lights it up with GameState.blackout.

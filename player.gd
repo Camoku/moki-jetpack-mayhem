@@ -197,7 +197,16 @@ func _physics_process(delta: float) -> void:
 # while falling. We rotate the SPRITE (a child), never the Player, so the collision
 # box stays square. The Moki art already faces right, so no flipping is needed.
 func _update_moki_look(delta: float, boosting: bool) -> void:
-	var want := "boost" if boosting else "idle"
+	# Pick the animation for what the Moki is doing right now:
+	#   boosting (jetpack firing) -> "boost"
+	#   resting on the floor and being carried along -> "run" (legs stride)
+	#   otherwise gliding/falling through the air -> "idle"
+	var grounded := position.y >= floor_y - 1.0
+	var want := "idle"
+	if boosting:
+		want = "boost"
+	elif grounded:
+		want = "run"
 	if moki.animation != want:
 		moki.play(want)
 	# +velocity.y points DOWN, so a positive value tilts the nose down. Map the

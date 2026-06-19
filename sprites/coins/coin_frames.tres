@@ -1,34 +1,51 @@
-; SpriteFrames for a spinning gold coin (6 separate PNG frames: face -> edge -> face).
-; One looping animation, "spin". Used by Coin.tscn's AnimatedSprite2D.
-[gd_resource type="SpriteFrames" load_steps=7 format=3 uid="uid://b8coinframes001"]
+[gd_resource type="SpriteFrames" format=3 uid="uid://ds6egxy6imwu"]
 
-[ext_resource type="Texture2D" uid="uid://0xriuelefrsn" path="res://sprites/coins/coin1.png" id="1"]
-[ext_resource type="Texture2D" uid="uid://bg22i7ky7rpii" path="res://sprites/coins/coin2.png" id="2"]
-[ext_resource type="Texture2D" uid="uid://bonmv2vq7qxhr" path="res://sprites/coins/coin3.png" id="3"]
-[ext_resource type="Texture2D" uid="uid://ddbly1emvp305" path="res://sprites/coins/coin4.png" id="4"]
-[ext_resource type="Texture2D" uid="uid://d17qjvekwd0yy" path="res://sprites/coins/coin5.png" id="5"]
-[ext_resource type="Texture2D" uid="uid://cytwflpbhddrh" path="res://sprites/coins/coin6.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://dstr0fl6givtn" path="res://sprites/coins/coin_rot_anim.png" id="1"]
+
+[sub_resource type="AtlasTexture" id="c0"]
+atlas = ExtResource("1")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="c1"]
+atlas = ExtResource("1")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="c2"]
+atlas = ExtResource("1")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="c3"]
+atlas = ExtResource("1")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="c4"]
+atlas = ExtResource("1")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="c5"]
+atlas = ExtResource("1")
+region = Rect2(160, 0, 32, 32)
 
 [resource]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("1")
+"texture": SubResource("c0")
 }, {
 "duration": 1.0,
-"texture": ExtResource("2")
+"texture": SubResource("c1")
 }, {
 "duration": 1.0,
-"texture": ExtResource("3")
+"texture": SubResource("c2")
 }, {
 "duration": 1.0,
-"texture": ExtResource("4")
+"texture": SubResource("c3")
 }, {
 "duration": 1.0,
-"texture": ExtResource("5")
+"texture": SubResource("c4")
 }, {
 "duration": 1.0,
-"texture": ExtResource("6")
+"texture": SubResource("c5")
 }],
 "loop": true,
 "name": &"spin",

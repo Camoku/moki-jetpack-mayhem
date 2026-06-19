@@ -111,10 +111,11 @@ playtesting in places (noted per item).
 - [ ] **More juice/feel** — *(celebration bursts + shake + fireworks done)*; still want crash
       shake + crash particle burst + jetpack trail, and a **combo/streak** meter
 - [ ] **Audio** — jetpack whoosh, coin ding, crash boom, event stingers, music
-- [~] **Real art** — *in progress.* Done: the **Moki** (24-frame `AnimatedSprite2D`, idle/boost
-      + velocity tilt), a **particle jetpack flame** (`jet_flame.gd`), and **spinning coins**
-      (6-frame `AnimatedSprite2D`, desynced). Still rectangles: asteroids, beams, lasers,
-      powerups, bosses, HUD. (Art lives in `res://sprites/`; see README "Art & animation".)
+- [~] **Real art** — *in progress.* Done: the **Moki** (24-frame `AnimatedSprite2D`,
+      idle/run/boost + velocity tilt), a **particle jetpack flame** (`jet_flame.gd`),
+      **spinning coins** (6-frame 32×32 sheet, desynced), and **asteroids** (rock sprite +
+      random tumble; also Storm meteors / Golem boss). Still rectangles: beams, lasers,
+      powerups, bosses' bodies, HUD. (Art lives in `res://sprites/`; see README "Art & animation".)
 - [ ] **Disk-persist owned upgrades** (part of store, but call it out)
 
 ### 🅿️ Parking lot (ideas, not committed)

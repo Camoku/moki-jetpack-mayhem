@@ -34,7 +34,13 @@ const GLOW_MAX := 1.8
 const VISION_NEAR := 180.0
 const VISION_FAR := 380.0
 @onready var glow: PointLight2D = $Glow
+@onready var sprite: Sprite2D = $Sprite
 var player: Node2D
+
+# Gentle tumble: each asteroid spins a little, at a random speed/direction, so a
+# field of them looks alive instead of like identical frozen copies.
+@export var max_spin: float = 0.8   # radians/second (either direction)
+var _spin: float = 0.0
 
 
 func _ready() -> void:
@@ -42,6 +48,11 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	add_to_group("asteroid")   # so the spawner can keep coins off us
 	_base_y = position.y   # remember our starting height for drifting.
+	# Variety: a random starting angle + maybe-mirror + a slow tumble. This only
+	# rotates the SPRITE, never the square collision box, so dodging is unchanged.
+	sprite.rotation = randf() * TAU
+	sprite.flip_h = randf() < 0.5
+	_spin = randf_range(-max_spin, max_spin)
 
 
 func _on_body_entered(body: Node) -> void:
@@ -69,6 +80,9 @@ func _process(delta: float) -> void:
 	# Glow only in the dark (GameState.blackout), and only the FOG-OF-WAR way:
 	# ominous red when the Moki is close, invisible when far. _vision() = 1 near, 0 far.
 	glow.energy = GameState.blackout * GLOW_MAX * _vision()
+
+	# Slow tumble (purely cosmetic - the collision box doesn't rotate).
+	sprite.rotation += _spin * delta
 
 	# Storm meteors rush left under their own steam (on top of the scroll).
 	if extra_speed != 0.0:
