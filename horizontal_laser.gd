@@ -87,6 +87,7 @@ func _process(delta: float) -> void:
 func _start_firing() -> void:
 	state = State.FIRING
 	deadly = true
+	Audio.play("laser")
 	_t = 0.0
 	modulate.a = 1.0
 	for body in get_overlapping_bodies():

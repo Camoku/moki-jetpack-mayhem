@@ -18,6 +18,8 @@ config/features=PackedStringArray("4.6", "Forward Plus")
 
 ; The "*" means enabled. GameState becomes a global we can use anywhere.
 GameState="*res://game_state.gd"
+; Audio = the global sound manager (Audio.play("coin"), etc.)
+Audio="*res://audio_manager.gd"
 
 [display]
 

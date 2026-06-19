@@ -36,6 +36,7 @@ func _ready() -> void:
 
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("player"):
+		Audio.play("sparkle")
 		# Tell the HUD (our run manager) to bank one spin for the slot machine.
 		var hud := get_tree().get_first_node_in_group("hud")
 		if hud != null and hud.has_method("add_spin_token"):

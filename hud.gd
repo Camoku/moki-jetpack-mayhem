@@ -154,6 +154,7 @@ func _process(delta: float) -> void:
 			# Flicker through random symbols (white) for the rolling-reel look.
 			reel_label.text = SLOT_SYMBOLS[randi() % SLOT_SYMBOLS.size()]
 			reel_label.modulate = Color(1, 1, 1, 1)
+			Audio.play("slot_tick")
 		if _spin_time <= 0.0:
 			_spinning = false
 			_land_reward(_pending_reward)
@@ -337,6 +338,7 @@ func _pick_slot_reward() -> String:
 
 # The reel has stopped: show the landed symbol + result text, and apply the prize.
 func _land_reward(kind: String) -> void:
+	Audio.play("jackpot")
 	match kind:
 		"small":
 			reel_label.text = "$"
@@ -410,6 +412,7 @@ func show_game_over() -> void:
 	if game_over:
 		return
 	game_over = true
+	Audio.play("gameover")
 
 	# Score is computed HERE, at the end: distance turned into points, then
 	# boosted by the coin multiplier.

@@ -90,6 +90,9 @@ func _process(delta: float) -> void:
 func _bounce() -> void:
 	_pop = 1.32
 	_flare = 1.8
+	# Soft bounce blip - only when on-screen, so off-screen orbs don't spam.
+	if camera != null and absf(global_position.x - camera.global_position.x) < 700.0:
+		Audio.play_varied("bounce", 0.12, -6.0)
 
 
 # --- Juice builders (configured in code, like jet_flame.gd) ---

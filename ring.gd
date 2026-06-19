@@ -43,6 +43,7 @@ func _on_body_entered(body: Node) -> void:
 		return
 	if body.is_in_group("player"):
 		_collected = true
+		Audio.play("ring")
 		var cam := get_tree().get_first_node_in_group("camera")
 		if cam != null:
 			cam.add_boost(boost_time, boost_multiplier)

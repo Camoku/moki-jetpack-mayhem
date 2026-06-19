@@ -205,6 +205,7 @@ func _process(delta: float) -> void:
 			if _t >= intro_time:
 				if camera != null:
 					camera.shake(20.0 if kind == "main" else 10.0)   # the DREADNOUGHT lands much harder
+				Audio.play("boss_alarm")
 				_enter_attack()
 		State.ATTACK:
 			# The attack fired on entry. The frigate keeps lobbing fresh volleys
@@ -330,6 +331,7 @@ func _fire_juice() -> void:
 func _die() -> void:
 	state = State.DYING
 	_t = 0.0
+	Audio.play("boss_defeat")
 	_set_core_vulnerable(false)
 	housing.color = Color(1.0, 0.85, 0.4, 1.0)   # flash bright as it blows (other kinds)
 	body_sprite.modulate = Color(2.2, 2.2, 2.2, 1.0)    # the cannon sprite flares bright
@@ -381,6 +383,7 @@ func _pulse_core(delta: float) -> void:
 func _on_core_entered(body: Node) -> void:
 	# A hit only counts while the core is exposed and off cooldown.
 	if body.is_in_group("player") and state == State.OVERHEAT and _core_vulnerable and _hit_cd <= 0.0:
+		Audio.play("boss_hit")
 		_take_hit()
 
 

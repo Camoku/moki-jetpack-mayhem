@@ -162,8 +162,9 @@ func _physics_process(delta: float) -> void:
 	if boosting:
 		velocity.y -= boost_power * delta
 
-	# Fire the jetpack exhaust only while we are actively boosting.
+	# Fire the jetpack exhaust + thruster loop only while actively boosting.
 	flame.emitting = boosting
+	Audio.set_boost(boosting)
 
 	# Keep the up/down speed inside friendly limits.
 	velocity.y = clamp(velocity.y, -max_rise_speed, max_fall_speed)
@@ -398,6 +399,7 @@ func crash() -> void:
 		has_shield = false
 		shield_visual.visible = false
 		invuln = shield_invuln_time
+		Audio.play("shield")
 		return
 
 	# A held Second Chance revives us once instead of dying - a dramatic save
@@ -405,6 +407,7 @@ func crash() -> void:
 	if _has_second_chance:
 		_has_second_chance = false
 		invuln = maxf(invuln, second_chance_invuln)
+		Audio.play("revive")
 		var hud_sc := get_tree().get_first_node_in_group("hud")
 		if hud_sc != null:
 			if hud_sc.has_method("show_banner"):
@@ -426,6 +429,8 @@ func crash() -> void:
 	dead = true
 	set_physics_process(false)
 	flame.emitting = false   # cut the thrust; any lingering sparks fade out
+	Audio.set_boost(false)   # stop the thruster loop
+	Audio.play("crash")
 
 	# Hand off to the HUD. It decides what happens next: if we collected any spin
 	# tokens this run, it opens the SLOT MACHINE (where a "revive" can bring us
@@ -442,6 +447,7 @@ func revive() -> void:
 	dead = false
 	set_physics_process(true)
 	velocity = Vector2.ZERO
+	Audio.play("revive")
 	invuln = maxf(invuln, revive_invuln_time)
 	# Make sure we're back inside the play area (not clipped into roof/floor).
 	position.y = clamp(position.y, ceiling_y, floor_y)

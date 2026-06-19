@@ -41,6 +41,7 @@ func _ready() -> void:
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("player"):
 		_collected = true
+		Audio.play_varied("coin")
 		# Ask the Moki how much this coin is worth (Doubler makes it 2),
 		# then tell the HUD (our run manager).
 		var hud := get_tree().get_first_node_in_group("hud")

@@ -97,6 +97,7 @@ func _on_body_entered(body: Node) -> void:
 func _pickup_juice() -> void:
 	_grabbed = true
 	set_deferred("monitoring", false)   # can't be grabbed again mid-pop
+	Audio.play("dash" if type == "dash" else "powerup")
 
 	# Green spark burst at the pickup's spot.
 	var fw := FIREWORKS.instantiate()

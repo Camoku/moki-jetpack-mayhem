@@ -76,6 +76,7 @@ func _process(delta: float) -> void:
 func _launch() -> void:
 	state = State.FLYING
 	deadly = true
+	Audio.play("missile")
 	warn_bg.visible = false
 	missile_sprite.visible = true
 	glow.visible = true

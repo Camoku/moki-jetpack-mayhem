@@ -291,6 +291,7 @@ var camera: Node2D
 
 func _ready() -> void:
 	add_to_group("spawner")   # so highway rings can report back to us
+	Audio.start_music()       # kick off the looping soundtrack for the run
 	# Lights ON at the start of every run. GameState is an autoload, so this
 	# value survives a scene reload - we must clear it or a new run could
 	# start mid-blackout if the last run died in the dark.
@@ -933,6 +934,7 @@ func _add_progress(amount: int) -> void:
 # already shows its own (e.g. the frenzy's "COMPLETE!").
 func _event_survived(banner: String = "EVENT CLEARED!") -> void:
 	_add_progress(1)
+	Audio.play("event")
 	_celebrate(false)
 	if banner != "":
 		_show_banner(banner, Color(0.6, 1.0, 0.7, 1.0), 1.6)
